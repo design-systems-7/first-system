@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 
 from data_provider import DataProvider
-from database_adapter import DatabaseAdapter
-from models import AssignedOrder
+from database.database_adapter import DatabaseAdapter
+from models.models import AssignedOrder
 from payment_calculator import PaymentCalculator
 from route_information_provider import RouteInformationProvider
 
@@ -19,8 +19,8 @@ class AssignOrderService:
         self.route_info_provider = route_info_provider
         self.database_adapter = database_adapter
 
-    def handle_assign_order(self, order_id: str, executer_id: str, locale: str):
-        order_data, zone_info, executer_profile, configs, tolls_data = self.data_provider.fetch_order_info(order_id,
+    async def handle_assign_order(self, order_id: str, executer_id: str, locale: str):
+        order_data, zone_info, executer_profile, configs, tolls_data = await self.data_provider.fetch_order_info(order_id,
                                                                                                            executer_id)
 
         final_coin_amount = self.payment_calculator.calculate_payment(order_data, zone_info, configs, tolls_data)
