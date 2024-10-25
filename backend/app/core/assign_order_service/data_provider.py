@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 import aiohttp
 import asyncio
 
-from models.models import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
+from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
 
 
 class DataProvider:

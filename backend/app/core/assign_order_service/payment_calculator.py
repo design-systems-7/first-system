@@ -1,4 +1,4 @@
-from models.models import OrderData, ZoneData, ConfigMap, TollRoadsData
+from app.schemas.order import OrderData, ZoneData, ConfigMap, TollRoadsData
 
 
 class PaymentCalculator:

@@ -48,3 +48,7 @@ class ConfigMap:
 
     def __getattr__(self, item):
         return self._data.get(item, None)
+
+@dataclass
+class TollRoadsData:
+    bonus_amount: float

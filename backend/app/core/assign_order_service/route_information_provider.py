@@ -1,4 +1,4 @@
-from models.models import ExecuterProfile, ZoneData
+from app.schemas.order import ExecuterProfile, ZoneData
 
 
 class RouteInformationProvider:
