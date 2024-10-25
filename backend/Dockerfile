@@ -1,56 +1,44 @@
-FROM python:3.10-slim-bullseye AS python-base
+FROM python:3.10
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_NO_INTERACTION=1 \
-    PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+ENV PYTHONUNBUFFERED=1
 
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+WORKDIR /app/
 
-# builder-base is used to build dependencies
-FROM python-base AS builder-base
-RUN buildDeps="build-essential" \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y \
-        curl \
-    && apt-get install -y --no-install-recommends $buildDeps \
-    && rm -rf /var/lib/apt/lists/*
+# Install uv
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.4.15 /uv /bin/uv
 
-# Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
-ENV POETRY_VERSION=1.3.2
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=${POETRY_HOME} python3 - --version ${POETRY_VERSION} && \
-    chmod a+x /opt/poetry/bin/poetry
+# Place executables in the environment at the front of the path
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
+ENV PATH="/app/.venv/bin:$PATH"
 
-# We copy our Python requirements here to cache them
-# and install only runtime deps using poetry
-WORKDIR $PYSETUP_PATH
-COPY app/poetry.lock app/pyproject.toml ./
-RUN poetry install --no-root
+# Compile bytecode
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
+# uv Cache
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
+ENV UV_LINK_MODE=copy
 
-# 'production' stage uses the clean 'python-base' stage and copyies
-# in only our runtime deps that were installed in the 'builder-base'
-FROM python-base AS production
-ENV FASTAPI_ENV=production
+# Install dependencies
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
 
-COPY --from=builder-base $VENV_PATH $VENV_PATH
-COPY gunicorn_conf.py /gunicorn_conf.py
+ENV PYTHONPATH=/app
 
-# Create user with the name poetry
-RUN groupadd -g 1500 poetry && \
-    useradd -m -u 1500 -g poetry poetry
+COPY ./scripts /app/scripts
 
-COPY --chown=poetry:poetry ./app /app
-USER poetry
-WORKDIR /app
+COPY ./pyproject.toml ./uv.lock ./alembic.ini ./gunicorn_conf.py /app/
 
-# activate our virtual environment heredocker
-RUN . /opt/pysetup/.venv/bin/activate
-CMD [ "gunicorn", "--worker-class=uvicorn.workers.UvicornWorker", "--config=/gunicorn_conf.py", "app.main:app"]
+COPY ./app /app/app
+
+# Sync the project
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync
+
+#CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+CMD [ "gunicorn", "--worker-class=uvicorn.workers.UvicornWorker", "--config=gunicorn_conf.py", "app.main:app"]
