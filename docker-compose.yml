@@ -67,6 +67,15 @@ services:
 
     build:
       context: ./backend
+  
+  external_apis:
+    image: external_apis
+    build:
+      context: ./external_apis
+    ports: 
+      - "3629:3629"
+    networks:
+      - default
 
 volumes:
   app-db-data:
