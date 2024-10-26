@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
 
-from data_provider import DataProvider
+from .data_provider import DataProvider
 from app.crud.order import DatabaseAdapter
 from app.schemas.order import AssignedOrder
-from payment_calculator import PaymentCalculator
-from route_information_provider import RouteInformationProvider
+from .payment_calculator import PaymentCalculator
+from .route_information_provider import RouteInformationProvider
 
 
 class AssignOrderService:
