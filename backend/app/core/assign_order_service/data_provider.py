@@ -30,7 +30,7 @@ class DataProvider:
             return order_data, zone_data, executer_profile, configs, toll_roads_data
 
     async def get_order_data(self, client: httpx.AsyncClient, order_id: str) -> OrderData:
-        url = environ.get('order_data_endpoint') + urlencode({'id': order_id})
+        url = environ.get('ORDER_DATA_ENDPOINT') + '?' + urlencode({'id': order_id})
         response = await client.get(url)
         response_data = response.json()
         return OrderData(
@@ -42,7 +42,7 @@ class DataProvider:
 
 
     async def get_zone_data(self, client: httpx.AsyncClient, zone_id: str) -> ZoneData:
-        url = environ.get('zone_data_endpoint') + urlencode({'id': zone_id})
+        url = environ.get('ZONE_DATA_ENDPOINT') + '?' + urlencode({'id': zone_id})
         response = await client.get(url)
         response_data = response.json()
         return ZoneData(
@@ -53,7 +53,7 @@ class DataProvider:
 
 
     async def get_executer_profile(self, client: httpx.AsyncClient, executer_id: str) -> ExecuterProfile:
-        url = environ.get('executer_profile_endpoint') + urlencode({'id': executer_id})
+        url = environ.get('EXECUTER_PROFILE_ENDPOINT') + '?' + urlencode({'id': executer_id})
         response = await client.get(url)
         response_data = response.json()
         return ExecuterProfile(
@@ -64,13 +64,13 @@ class DataProvider:
 
 
     async def get_configs(self, client: httpx.AsyncClient) -> ConfigMap:
-        url = environ.get('configs_endpoint')
+        url = environ.get('CONFIGS_ENDPOINT')
         response = await client.get(url)
         return ConfigMap(response.json())
 
 
     async def get_toll_roads(self, client: httpx.AsyncClient, zone_display_name: str) -> TollRoadsData:
-        url = environ.get('tollroads_endpoint') + urlencode({'zone_display_name': zone_display_name})
+        url = environ.get('TOLLROADS_ENDPOINT') + '?' + urlencode({'zone_display_name': zone_display_name})
         response = await client.get(url)
         response_data = response.json()
         return TollRoadsData(
