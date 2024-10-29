@@ -50,6 +50,8 @@ services:
       - default
     depends_on:
       - db
+    volumes:
+      - ./backend/htmlcov:/app/htmlcov
     env_file:
       - .env
     environment:
