@@ -3,6 +3,8 @@ from sqlalchemy import select, update
 from app.models.order import Order, OrderStatus
 from datetime import datetime, timedelta
 from typing import Optional
+from app.core.cancel_order.py import can_cancel_order
+from app.core.complete_order.py import can_complete_order
 
 
 class DatabaseAdapter:
@@ -28,30 +30,37 @@ class DatabaseAdapter:
         return order
 
     async def cancel_order(self, session: AsyncSession, order_id: int, executor_id: int) -> Optional[Order]:
-        # TODO 2 query
-        # 1 select + 1 update
         query = select(Order).where(Order.order_id == order_id, Order.executor_id == executor_id)
         result = await session.execute(query)
         order = result.scalar_one_or_none()
 
-        # TODO вынести проверки бизнес-уровня на бизнес-уровень (core)
-        if order and order.status == OrderStatus.active and order.created_at + timedelta(
-                minutes=10) > datetime.utcnow():
-            order.status = OrderStatus.cancelled
-            await session.commit()
-            await session.refresh(order)
-        return order
+        if order and can_cancel_order(order):
+            stmt = (
+                update(Order)
+                .where(Order.order_id == order_id, Order.executor_id == executor_id)
+                .values(status=OrderStatus.cancelled)
+                .returning(Order)
+            )
+            result = await session.execute(stmt)
+            order = result.scalar_one_or_none()
+            return order
+
+        return None
 
     async def complete_order(self, session: AsyncSession, order_id: int, executor_id: int) -> Optional[Order]:
-        # TODO 2 query
-        # 1 select + 1 update
         query = select(Order).where(Order.order_id == order_id, Order.executor_id == executor_id)
         result = await session.execute(query)
         order = result.scalar_one_or_none()
 
-        # TODO вынести проверки бизнес-уровня на бизнес-уровень (core)
-        if order and order.status == OrderStatus.taken:
-            order.status = OrderStatus.done
-            await session.commit()
-            await session.refresh(order)
-        return order
+        if order and can_complete_order(order):
+            stmt = (
+                update(Order)
+                .where(Order.order_id == order_id, Order.executor_id == executor_id)
+                .values(status=OrderStatus.done)
+                .returning(Order)
+            )
+            result = await session.execute(stmt)
+            order = result.scalar_one_or_none()
+            return order
+
+        return None
