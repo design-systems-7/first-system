@@ -12,9 +12,6 @@ class OrderStatus(enum.Enum):
 
 
 class Order(Base):
-    __tablename__ = "orders"
-    __table_args__ = {'extend_existing': True}
-
     order_id = Column(Integer, primary_key=True, index=True)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.active)
     price = Column(Float, nullable=False)
