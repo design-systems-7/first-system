@@ -1,5 +1,13 @@
 services:
 
+  redis:
+    image: redis:latest
+    restart: always
+    # Configure Redis as the lru-cache
+    command: [ "redis-server", "--maxmemory", "500mb", "--maxmemory-policy", "allkeys-lru" ]
+    expose:
+      - 6379
+
   db:
     image: postgres:12
     restart: always
