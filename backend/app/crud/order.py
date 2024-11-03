@@ -2,9 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.models.order import Order, OrderStatus
 from datetime import datetime, timedelta
-from typing import Optional
-from app.core.cancel_order.py import can_cancel_order
-from app.core.complete_order.py import can_complete_order
+from typing import List, Optional
 
 
 class DatabaseAdapter:
@@ -25,12 +23,21 @@ class DatabaseAdapter:
         order = result.scalar_one_or_none()
         return order
 
-    async def get_active_order_for_execution(self, session: AsyncSession, executor_id: int) -> Optional[Order]:
+    async def get_active_orders_for_execution(self, session: AsyncSession, executor_id: int) -> List[Order]:
         query = (
-                Order.update()
-                .where(Order.executor_id == executor_id)
-                .values(status=OrderStatus.active)
-                .returning(Order)
+            select(Order)
+            .where(Order.executor_id == executor_id, Order.status == OrderStatus.active)
+        )
+        result = await session.execute(query)
+        orders = result.scalars().all()
+        return orders
+
+    async def take_order(self, session: AsyncSession, order_id: int) -> Optional[Order]:
+        query = (
+            update(Order)
+            .where(Order.order_id == order_id, Order.status == OrderStatus.active)
+            .values(status=OrderStatus.taken)
+            .returning(Order)
         )
         result = await session.execute(query)
         order = result.scalar_one_or_none()
