@@ -39,12 +39,12 @@ class Settings(BaseSettings):
     def all_cors_origins(self) -> list[str]:
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
 
-    PROJECT_NAME: str
-    POSTGRES_SERVER: str
+    PROJECT_NAME: str = "Service 1"
+    POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "changethis"
+    POSTGRES_DB: str = "app"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
