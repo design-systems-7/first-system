@@ -14,7 +14,6 @@ class DatabaseAdapter:
     async def add_order(self, session: AsyncSession, order_data: dict) -> Order:
         new_order = Order(**order_data)
         self.async_session.add(new_order)
-        await session.expire(new_order)
         return new_order
 
     async def get_taken_order(self, session: AsyncSession, executor_id: int) -> Optional[Order]:
