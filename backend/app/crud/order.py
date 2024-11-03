@@ -19,7 +19,7 @@ class DatabaseAdapter:
                                                      order_id: int,
                                                      safety_datetime: datetime.datetime) -> Optional[Order]:
         query = (
-                Order.update()
+                update(Order)
                 .where(Order.order_id == order_id,
                        Order.status == OrderStatus.active,
                        Order.created_at > safety_datetime)
