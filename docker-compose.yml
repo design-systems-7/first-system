@@ -85,6 +85,12 @@ services:
       context: ./redis_cache
     networks:
       - default
+  
+  cache_updater:
+    image: alpine
+    depends_on:
+      - backend
+    command: /bin/sh -c "while true; do wget -qO- http://backend:8000/api/v1/assign_order/update_cache; sleep 60; done"
 
 volumes:
   app-db-data:

@@ -107,3 +107,12 @@ class DataProvider:
         await self._cache.set(url, json.dumps(dataclasses.asdict(tolls_data)), ttl=10 * 60)
 
         return tolls_data
+
+    async def update_cache(self):
+        print('Updating cache')
+        url = environ.get('CONFIGS_ENDPOINT')
+        try:
+            config_data = httpx.get(url).json()
+            await self._cache.set(url, json.dumps(config_data))
+        finally:
+            pass
