@@ -20,3 +20,8 @@ service = AssignOrderService(
 async def handle_assign_order(order_id: str, executer_id: str, locale: str) -> None:
     await service.handle_assign_order(order_id, executer_id, locale)
     # TODO возвращать статусы
+
+
+@router.get("/update_config_cache")
+async def update_config_cache() -> None:
+    await service.data_provider.update_config_cache()

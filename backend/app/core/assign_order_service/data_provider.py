@@ -8,8 +8,10 @@ import httpx
 import asyncio
 from aiocache import Cache
 
-from app.main import logger
+from app.logging import logger
+from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
+
 
 
 class DataProvider:
@@ -64,6 +66,7 @@ class DataProvider:
             display_name=response_data['display_name']
         )
 
+        # пока оставляю здесь магическое число, потому что в будущем хочу переделать то, как сейчас все происходит
         await self._cache.set(url, json.dumps(dataclasses.asdict(zone_data)), ttl=10 * 60)
 
         return zone_data
@@ -81,14 +84,13 @@ class DataProvider:
     # Cache refreshed every minute
     async def get_configs(self, client: httpx.AsyncClient) -> ConfigMap:
         url = environ.get('CONFIGS_ENDPOINT')
+
         cached_response = await self._cache.get(url)
         if cached_response is not None:
             data = json.loads(cached_response)
             logger.info(f'Config Map cached response: {data}')
             return ConfigMap(data)
-        response = await client.get(url)
-        await self._cache.set(url, json.dumps(response.json()))
-        return ConfigMap(response.json())
+        raise Exception
 
     async def get_toll_roads(self, client: httpx.AsyncClient, zone_display_name: str) -> TollRoadsData:
         url = environ.get('TOLLROADS_ENDPOINT') + '?' + urlencode({'zone_display_name': zone_display_name})
@@ -105,15 +107,19 @@ class DataProvider:
 
         # TODO: add fallback to config
 
-        await self._cache.set(url, json.dumps(dataclasses.asdict(tolls_data)), ttl=10 * 60)
+        await self._cache.set(url, json.dumps(dataclasses.asdict(tolls_data)))
 
         return tolls_data
 
-    async def update_config_cache(self):
+    async def update_config_cache(self) -> None:
         logger.info('Updating cache')
         url = environ.get('CONFIGS_ENDPOINT')
         try:
-            config_data = httpx.get(url).json()
-            await self._cache.set(url, json.dumps(config_data), ttl=60)
-        finally:
-            pass
+            config_response = httpx.get(url).raise_for_status()
+            await self._cache.set(url, json.dumps(config_response.json()), ttl=settings.CONFIG_CACHE_TTL)
+        except httpx.HTTPError as exc:
+            logger.error(f"HTTP Exception during request to config service {exc.request.url} - {exc}")
+            raise exc
+        except Exception as exc:
+            logger.error(f"Error during updating config cache: {exc}")
+            raise exc

@@ -58,11 +58,9 @@ def repeat_every(
     wait_first: float (default None)
         If not None, the function will wait for the given duration before the first call
     logger: Optional[logging.Logger] (default None)
-        Warning: This parameter is deprecated and will be removed in the 1.0 release.
         The logger to use to log any exceptions raised by calls to the decorated function.
         If not provided, exceptions will not be logged by this function (though they may be handled by the event loop).
     raise_exceptions: bool (default False)
-        Warning: This parameter is deprecated and will be removed in the 1.0 release.
         If True, errors raised by the decorated function will be raised to the event loop's exception handler.
         Note that if an error is raised, the repeated execution will stop.
         Otherwise, exceptions are just logged and the execution continues to repeat.
