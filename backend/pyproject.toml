@@ -24,6 +24,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "gunicorn>=23.0.0",
     "aiocache[redis]>=0.12.3",
+    "loguru>=0.7.2",
 ]
 
 [tool.uv]

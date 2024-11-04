@@ -58,5 +58,9 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
+    CONFIG_CACHE_TTL: int = 60
+    # running every CONFIG_CACHE_TTL - 10 seconds with 10 seconds of buffer for timeouts and retries
+    CONFIG_CACHE_UPDATE_EVERY_SECONDS: int = CONFIG_CACHE_TTL - 10
+
 
 settings = Settings()  # type: ignore

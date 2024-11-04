@@ -8,6 +8,7 @@ import httpx
 import asyncio
 from aiocache import Cache
 
+from app.main import logger
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
 
 
@@ -52,7 +53,7 @@ class DataProvider:
         cached_response = await self._cache.get(url)
         if cached_response is not None:
             zone_data = ZoneData(**json.loads(cached_response))
-            print(f'Zone data cached response: {zone_data}')
+            logger.info(f'Zone data cached response: {zone_data}')
             return zone_data
         response = await client.get(url)
         response_data = response.json()
@@ -83,7 +84,7 @@ class DataProvider:
         cached_response = await self._cache.get(url)
         if cached_response is not None:
             data = json.loads(cached_response)
-            print(f'Config Map cached response: {data}')
+            logger.info(f'Config Map cached response: {data}')
             return ConfigMap(data)
         response = await client.get(url)
         await self._cache.set(url, json.dumps(response.json()))
@@ -94,7 +95,7 @@ class DataProvider:
         cached_response = await self._cache.get(url)
         if cached_response is not None:
             tolls_data = TollRoadsData(**json.loads(cached_response))
-            print(f'Cached toll roads data: {tolls_data}')
+            logger.info(f'Cached toll roads data: {tolls_data}')
             return tolls_data
         response = await client.get(url)
         response_data = response.json()
@@ -108,11 +109,11 @@ class DataProvider:
 
         return tolls_data
 
-    async def update_cache(self):
-        print('Updating cache')
+    async def update_config_cache(self):
+        logger.info('Updating cache')
         url = environ.get('CONFIGS_ENDPOINT')
         try:
             config_data = httpx.get(url).json()
-            await self._cache.set(url, json.dumps(config_data))
+            await self._cache.set(url, json.dumps(config_data), ttl=60)
         finally:
             pass
