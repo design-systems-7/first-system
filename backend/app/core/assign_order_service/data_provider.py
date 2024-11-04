@@ -1,15 +1,21 @@
+import dataclasses
+import json
 from os import environ
 from typing import Tuple
 from urllib.parse import urlencode
 
 import httpx
 import asyncio
+from aiocache import Cache
 
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
 
 
 class DataProvider:
     """A class that asynchronously fetches data needed to create an order from multiple data sources at once."""
+
+    def __init__(self):
+        self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
 
     async def fetch_order_info(self, order_id: str, executer_id: str) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
@@ -40,17 +46,26 @@ class DataProvider:
             base_coin_amount=response_data['base_coin_amount']
         )
 
-
+    # LRU-cache with 10 minute ttl
     async def get_zone_data(self, client: httpx.AsyncClient, zone_id: str) -> ZoneData:
         url = environ.get('ZONE_DATA_ENDPOINT') + '?' + urlencode({'id': zone_id})
+        cached_response = await self._cache.get(url)
+        if cached_response is not None:
+            zone_data = ZoneData(**json.loads(cached_response))
+            print(f'Zone data cached response: {zone_data}')
+            return zone_data
         response = await client.get(url)
         response_data = response.json()
-        return ZoneData(
+
+        zone_data = ZoneData(
             id=zone_id,
             coin_coeff=response_data['coin_coeff'],
             display_name=response_data['display_name']
         )
 
+        await self._cache.set(url, json.dumps(dataclasses.asdict(zone_data)), ttl=10 * 60)
+
+        return zone_data
 
     async def get_executer_profile(self, client: httpx.AsyncClient, executer_id: str) -> ExecuterProfile:
         url = environ.get('EXECUTER_PROFILE_ENDPOINT') + '?' + urlencode({'id': executer_id})
@@ -62,17 +77,33 @@ class DataProvider:
             rating=response_data['rating']
         )
 
-
+    # Cache refreshed every minute
     async def get_configs(self, client: httpx.AsyncClient) -> ConfigMap:
         url = environ.get('CONFIGS_ENDPOINT')
+        cached_response = await self._cache.get(url)
+        if cached_response is not None:
+            data = json.loads(cached_response)
+            print(f'Config Map cached response: {data}')
+            return ConfigMap(data)
         response = await client.get(url)
+        await self._cache.set(url, json.dumps(response.json()))
         return ConfigMap(response.json())
-
 
     async def get_toll_roads(self, client: httpx.AsyncClient, zone_display_name: str) -> TollRoadsData:
         url = environ.get('TOLLROADS_ENDPOINT') + '?' + urlencode({'zone_display_name': zone_display_name})
+        cached_response = await self._cache.get(url)
+        if cached_response is not None:
+            tolls_data = TollRoadsData(**json.loads(cached_response))
+            print(f'Cached toll roads data: {tolls_data}')
+            return tolls_data
         response = await client.get(url)
         response_data = response.json()
-        return TollRoadsData(
+        tolls_data = TollRoadsData(
             response_data['bonus_amount']
         )
+
+        # TODO: add fallback to config
+
+        await self._cache.set(url, json.dumps(dataclasses.asdict(tolls_data)), ttl=10 * 60)
+
+        return tolls_data

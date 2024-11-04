@@ -79,5 +79,12 @@ services:
     networks:
       - default
 
+  redis_cache:
+    image: redis_cache
+    build:
+      context: ./redis_cache
+    networks:
+      - default
+
 volumes:
   app-db-data:
