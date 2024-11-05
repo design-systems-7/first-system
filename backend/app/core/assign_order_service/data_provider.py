@@ -115,7 +115,7 @@ class DataProvider:
         url = environ.get('CONFIGS_ENDPOINT')
         try:
             config_response = httpx.get(url).raise_for_status()
-            await self._cache.set(url, json.dumps(config_response.json()), ttl=settings.CONFIG_CACHE_TTL)
+            await self._cache.set(url, json.dumps(config_response.json()))
         except httpx.HTTPError as exc:
             logger.error(f"HTTP Exception during request to config service {exc.request.url} - {exc}")
             raise exc
