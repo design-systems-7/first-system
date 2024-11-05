@@ -13,4 +13,5 @@ from loguru import logger
 import sys
 
 logger.remove()
-logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss} | <level>{message}</level> </green>", colorize=True, enqueue=True)
+logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss} | <level>{message}</level> </green>",
+           colorize=True, enqueue=True)

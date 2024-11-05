@@ -8,7 +8,7 @@ import httpx
 import asyncio
 from aiocache import Cache
 
-from app.logging import logger
+from app.app_logger import logger
 from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
 
@@ -112,7 +112,6 @@ class DataProvider:
         return tolls_data
 
     async def update_config_cache(self) -> None:
-        logger.info('Updating cache')
         url = environ.get('CONFIGS_ENDPOINT')
         try:
             config_response = httpx.get(url).raise_for_status()
