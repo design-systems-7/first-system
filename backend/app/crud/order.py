@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.models.order import Order, OrderStatus
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
+import uuid
 
 
 class DatabaseAdapter:
@@ -16,15 +17,15 @@ class DatabaseAdapter:
 
     async def cancel_active_order_within_safety_time(self,
                                                      session: AsyncSession,
-                                                     order_id: int,
-                                                     safety_datetime: datetime.datetime) -> Optional[Order]:
+                                                     assigned_order_id: uuid.UUID,
+                                                     safety_datetime: datetime) -> Optional[Order]:
         query = (
-                update(Order)
-                .where(Order.order_id == order_id,
-                       Order.status == OrderStatus.active,
-                       Order.created_at > safety_datetime)
-                .values(status=OrderStatus.cancelled)
-                .returning(Order)
+            update(Order)
+            .where(Order.assigned_order_id == assigned_order_id,
+                   Order.status == OrderStatus.active,
+                   Order.created_at > safety_datetime)
+            .values(status=OrderStatus.cancelled)
+            .returning(Order)
         )
         result = await session.execute(query)
         order = result.scalar_one_or_none()
