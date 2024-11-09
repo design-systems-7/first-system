@@ -20,7 +20,7 @@ class AssignOrderService:
         self.database_adapter = database_adapter
 
     async def handle_assign_order(self, order_id: str, executer_id: str, locale: str):
-        order_data, zone_info, executer_profile, configs, tolls_data = await self.data_provider.fetch_order_info(
+        order_data, zone_info, executer_profile, configs, tolls_data = await self.data_provider.collect_order_info(
             order_id,
             executer_id)
 

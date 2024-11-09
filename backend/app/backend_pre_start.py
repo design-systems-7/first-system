@@ -45,7 +45,7 @@ async def run_periodic_task(periodic_task: callable, seconds: int) -> None:
 
 def run_scheduler() -> None:
     loop = asyncio.new_event_loop()
-    task = loop.create_task(run_periodic_task(update_config_cache_task, settings.CONFIG_CACHE_UPDATE_EVERY_SECONDS))
+    task = loop.create_task(run_periodic_task(update_config_cache_task, settings.CONFIGS_CACHE_UPDATE_EVERY_SECONDS))
 
     try:
         loop.run_until_complete(task)
@@ -56,4 +56,3 @@ def run_scheduler() -> None:
 if __name__ == "__main__":
     asyncio.run(db_health_check(engine))
     run_scheduler()
-

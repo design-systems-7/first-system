@@ -1,17 +1,25 @@
+import asyncio
 import dataclasses
 import json
 from os import environ
-from typing import Tuple
+from typing import Tuple, Optional, Any, TypeVar, Type
 from urllib.parse import urlencode
 
 import httpx
-import asyncio
 from aiocache import Cache
+from httpx import AsyncHTTPTransport, AsyncClient
 
 from app.app_logger import logger
 from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
+from app.schemas.requests_config import HTTPClientConfig, FallbacksConfig, HTTPDataSourceConfig
 
+# For annotating some generic class
+T = TypeVar('T')
+
+
+class DataSourceException(Exception):
+    pass
 
 
 class DataProvider:
@@ -20,105 +28,126 @@ class DataProvider:
     def __init__(self):
         self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
 
-    async def fetch_order_info(self, order_id: str, executer_id: str) -> Tuple[
+    async def collect_order_info(self, order_id: str, executer_id: str) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
     ]:
-        async with httpx.AsyncClient() as client:
-            order_data_task = self.get_order_data(client, order_id)
-            executer_profile_task = self.get_executer_profile(client, executer_id)
-            configs_task = self.get_configs(client)
+        order_data_task = self.fetch_with_fallback_strategy(data_source="order_data",
+                                                            query_params={"id": order_id})
+        executer_profile_task = self.fetch_with_fallback_strategy(data_source="executer_profile",
+                                                                  query_params={"id": executer_id})
+        # Configs source is special case. We fetch data only from cache - it is updated by periodic task
+        configs_task = self.get_configs_data()
 
-            order_data, executer_profile, configs = await asyncio.gather(
-                order_data_task, executer_profile_task, configs_task
-            )
-
-            zone_data = await self.get_zone_data(client, order_data.zone_id)
-
-            toll_roads_data = await self.get_toll_roads(client, zone_data.display_name)
-
-            return order_data, zone_data, executer_profile, configs, toll_roads_data
-
-    async def get_order_data(self, client: httpx.AsyncClient, order_id: str) -> OrderData:
-        url = environ.get('ORDER_DATA_ENDPOINT') + '?' + urlencode({'id': order_id})
-        response = await client.get(url)
-        response_data = response.json()
-        return OrderData(
-            id=order_id,
-            zone_id=response_data['zone_id'],
-            user_id=response_data['user_id'],
-            base_coin_amount=response_data['base_coin_amount']
+        order_data, executer_profile, configs = await asyncio.gather(
+            order_data_task, executer_profile_task, configs_task
         )
 
-    # LRU-cache with 10 minute ttl
-    async def get_zone_data(self, client: httpx.AsyncClient, zone_id: str) -> ZoneData:
-        url = environ.get('ZONE_DATA_ENDPOINT') + '?' + urlencode({'id': zone_id})
+        zone_data = await self.fetch_with_fallback_strategy(data_source="zone_data",
+                                                            query_params={"id": order_data.zone_id})
+        toll_roads_data = await self.fetch_with_fallback_strategy(data_source="toll_roads",
+                                                                  query_params={
+                                                                      "zone_display_name": zone_data.display_name
+                                                                  })
+
+        return order_data, zone_data, executer_profile, configs, toll_roads_data
+
+    async def fetch_with_fallback_strategy(self, data_source: str,
+                                           query_params: Optional[dict[str, Any]] = None,
+                                           ) -> T:
+        # CamelCase to more explicit indication that this is a class
+        ResponseSchema: Type[T] = settings.DATA_REQUESTS_RESPONSES_SCHEMAS[data_source]  # noqa
+        data_source_requests_config: HTTPDataSourceConfig = settings.DATA_REQUESTS_CONFIG[data_source]
+
+        # TODO вернуть ояьбзательный fallabck_config
+        timeout: int = data_source_requests_config.get("http_client_config", {}).get(
+            "timeout", settings.GLOBAL_HTTP_REQUEST_TIMEOUT
+        )
+        retries: int = data_source_requests_config.get("http_client_config", {}).get(
+            "retries", settings.GLOBAL_HTTP_REQUEST_RETRIES
+        )
+
+        fallbacks_config: FallbacksConfig = data_source_requests_config["fallbacks_config"]
+        is_caching_enabled: bool = fallbacks_config["is_caching_enabled"]
+        cache_ttl: int = fallbacks_config.get("cache_ttl", None)
+        is_fallback_to_config: bool = fallbacks_config["is_fallback_to_config"]
+        config_data: dict = fallbacks_config.get("config_data", None)
+
+        url: str = data_source_requests_config['endpoint']
+        if query_params is not None:
+            url += "?" + urlencode(query_params)
+
+        result = await self.fetch_from_data_source(ResponseSchema=ResponseSchema,
+                                                   url=url, timeout=timeout, retries=retries,
+                                                   is_caching_enabled=is_caching_enabled, cache_ttl=cache_ttl)
+
+        if result is None and is_caching_enabled:
+            result = await self.fetch_from_cache(ResponseSchema=ResponseSchema, url=url)
+
+        if result is None and is_fallback_to_config:
+            result = ResponseSchema(**config_data)
+
+        if result is None:
+            # TODO Catch it on API level to return proper HTTPResponse
+            # TODO Also catch all other exceptions -- for exaample, if service give us wrong response format,
+            #  dataclass will throw some exception. We want this and want to give pretty same error "data source broken"
+            raise DataSourceException(f"Missing data from {data_source}.")
+
+        logger.info(f'Got data from {data_source}: {result}')
+        return result
+
+    async def fetch_from_data_source(self, ResponseSchema: Type[T],
+                                     url: str,
+                                     timeout: int,
+                                     retries: int,
+                                     is_caching_enabled: bool, cache_ttl: Optional[int]) -> Optional[T]:
+        transport = AsyncHTTPTransport(retries=retries)
+        try:
+            async with AsyncClient(transport=transport) as client:
+                result = await client.get(url, timeout=timeout)
+                result = result.raise_for_status()
+                result = ResponseSchema(**result.json())
+        except Exception as e:
+            logger.error(f"Fetching with {url} directly failed: {e}")
+            return None
+
+        if is_caching_enabled:
+            try:
+                await self._cache.set(url, json.dumps(dataclasses.asdict(result)), ttl=cache_ttl)
+            except Exception as e:
+                logger.error(f"Error during caching from {url}: {e}")
+
+        return result
+
+    async def fetch_from_cache(self, ResponseSchema: Type[T],
+                               url: str) -> Optional[T]:
         cached_response = await self._cache.get(url)
         if cached_response is not None:
-            zone_data = ZoneData(**json.loads(cached_response))
-            logger.info(f'Zone data cached response: {zone_data}')
-            return zone_data
-        response = await client.get(url)
-        response_data = response.json()
+            response = ResponseSchema(**json.loads(cached_response))
+            return response
+        return None
 
-        zone_data = ZoneData(
-            id=zone_id,
-            coin_coeff=response_data['coin_coeff'],
-            display_name=response_data['display_name']
-        )
-
-        # пока оставляю здесь магическое число, потому что в будущем хочу переделать то, как сейчас все происходит
-        await self._cache.set(url, json.dumps(dataclasses.asdict(zone_data)), ttl=10 * 60)
-
-        return zone_data
-
-    async def get_executer_profile(self, client: httpx.AsyncClient, executer_id: str) -> ExecuterProfile:
-        url = environ.get('EXECUTER_PROFILE_ENDPOINT') + '?' + urlencode({'id': executer_id})
-        response = await client.get(url)
-        response_data = response.json()
-        return ExecuterProfile(
-            id=executer_id,
-            tags=response_data['tags'],
-            rating=response_data['rating']
-        )
-
-    # Cache refreshed every minute
-    async def get_configs(self, client: httpx.AsyncClient) -> ConfigMap:
-        url = environ.get('CONFIGS_ENDPOINT')
-
-        cached_response = await self._cache.get(url)
+    async def get_configs_data(self) -> ConfigMap:
+        cached_response = await self._cache.get(settings.CONFIGS_URL)
         if cached_response is not None:
             data = json.loads(cached_response)
-            logger.info(f'Config Map cached response: {data}')
+            logger.info(f'Got data from configs: {data}')
             return ConfigMap(data)
-        raise Exception
+        # Highly unexpected case - possible only with cache corruption
+        raise DataSourceException("Missing config data in cache!")
 
-    async def get_toll_roads(self, client: httpx.AsyncClient, zone_display_name: str) -> TollRoadsData:
-        url = environ.get('TOLLROADS_ENDPOINT') + '?' + urlencode({'zone_display_name': zone_display_name})
-        cached_response = await self._cache.get(url)
-        if cached_response is not None:
-            tolls_data = TollRoadsData(**json.loads(cached_response))
-            logger.info(f'Cached toll roads data: {tolls_data}')
-            return tolls_data
-        response = await client.get(url)
-        response_data = response.json()
-        tolls_data = TollRoadsData(
-            response_data['bonus_amount']
-        )
-
-        # TODO: add fallback to config
-
-        await self._cache.set(url, json.dumps(dataclasses.asdict(tolls_data)))
-
-        return tolls_data
-
-    async def update_config_cache(self) -> None:
-        url = environ.get('CONFIGS_ENDPOINT')
+    async def update_config_cache(self) -> bool:
+        url: str = settings.CONFIGS_URL
+        transport = AsyncHTTPTransport(retries=settings.GLOBAL_HTTP_REQUEST_RETRIES)
         try:
-            config_response = httpx.get(url).raise_for_status()
-            await self._cache.set(url, json.dumps(config_response.json()))
+            async with AsyncClient(transport=transport) as client:
+                config_response = await client.get(url, timeout=settings.GLOBAL_HTTP_REQUEST_TIMEOUT)
+                config_response.raise_for_status()
+                await self._cache.set(url, json.dumps(config_response.json()))
         except httpx.HTTPError as exc:
             logger.error(f"HTTP Exception during request to config service {exc.request.url} - {exc}")
-            raise exc
+            return False
         except Exception as exc:
             logger.error(f"Error during updating config cache: {exc}")
-            raise exc
+            return False
+
+        return True
