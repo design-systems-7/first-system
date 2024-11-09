@@ -15,12 +15,13 @@ class HTTPClientConfig(DictConfigBase):
 class FallbacksConfig(DictConfigBase):
     is_caching_enabled: bool
     cache_ttl: NotRequired[int]
-    is_fallback_to_config: bool
     config_data: NotRequired[dict]
+    is_fallback_to_config: bool
 
     @field_validator('is_fallback_to_config')
     def config_fallback_configured_properly(cls, v, info: FieldValidationInfo): # noqa
-        if v and "configsdata" not in info.data:
+        if v and "config_data" not in info.data:
+            logger.info(info.data)
             raise ValueError('If enabled fallback to config, data in config must be specified')
         return v
 

@@ -68,6 +68,8 @@ services:
         condition: service_started
     volumes:
       - ./backend/htmlcov:/app/htmlcov
+      # For changing request's policy to services on flight
+      - ./backend/data_sources_config.json:/app/data_sources_config.json
     env_file:
       - .env
     environment:
@@ -95,12 +97,6 @@ services:
     networks:
       - default
 
-  redis_cache:
-    image: redis_cache
-    build:
-      context: ./redis_cache
-    networks:
-      - default
 
 volumes:
   app-db-data:

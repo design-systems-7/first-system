@@ -1,7 +1,6 @@
 import asyncio
 import dataclasses
 import json
-from os import environ
 from typing import Tuple, Optional, Any, TypeVar, Type
 from urllib.parse import urlencode
 
@@ -81,9 +80,11 @@ class DataProvider:
                                                    is_caching_enabled=is_caching_enabled, cache_ttl=cache_ttl)
 
         if result is None and is_caching_enabled:
+            logger.info(f"Trying to fetch data for {data_source} for cache")
             result = await self.fetch_from_cache(ResponseSchema=ResponseSchema, url=url)
 
         if result is None and is_fallback_to_config:
+            logger.info(f"Trying to fetch data for {data_source} for config")
             result = ResponseSchema(**config_data)
 
         if result is None:
@@ -124,6 +125,7 @@ class DataProvider:
         if cached_response is not None:
             response = ResponseSchema(**json.loads(cached_response))
             return response
+        logger.warning(f'Not found data for {url} in cache')
         return None
 
     async def get_configs_data(self) -> ConfigMap:

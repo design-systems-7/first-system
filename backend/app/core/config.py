@@ -1,67 +1,38 @@
-from dataclasses import dataclass
-from typing import Annotated, Any, Literal, Type
-
-from pydantic import (
-    AnyUrl,
-    BeforeValidator,
-    PostgresDsn,
-    computed_field, TypeAdapter,
-)
-from pydantic_core import MultiHostUrl
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import json
+import sys
+from pathlib import Path
+from typing import Any, Literal, Type, Tuple, Dict
 
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, TollRoadsData, ConfigMap
 from app.schemas.requests_config import HTTPDataSourceConfig
-
-a = '''{
-"endpoint": "http://external_apis:3629/order-data",
-  "http_client_config": {
-    "timeout": 30,
-    "retries": 2
-  },
-  "fallbacks_config": {
-    "is_caching_enabled": false,
-    "is_fallback_to_config": false
-  }
-}'''
-c = '''{
-"endpoint": "http://external_apis:3629/zone-data",
-  "fallbacks_config": {
-    "is_caching_enabled": true,
-    "cache_ttl": 600,
-    "is_fallback_to_config": false
-  }
-}'''
-d = '''{
-"endpoint": "http://external_apis:3629/executer-profile",
-  "http_client_config": {
-    "timeout": 60,
-    "retries": 1
-  },
-  "fallbacks_config": {
-    "is_caching_enabled": false,
-    "is_fallback_to_config": false
-  }
-}'''
-e = '''{
-"endpoint": "http://external_apis:3629/toll-roads",
-  "fallbacks_config": {
-    "is_caching_enabled": true,
-    "is_fallback_to_config": true,
-    "config_data": {
-    "bonus_amount": 0
-    }
-  }
-}'''
+from pydantic import (
+    PostgresDsn,
+    computed_field, TypeAdapter, )
+from pydantic_core import MultiHostUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
 
-def parse_cors(v: Any) -> list[str] | str:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in
-                v.split(",")]
-    elif isinstance(v, list | str):
-        return v
-    raise ValueError(v)
+class ExternalConfigServiceSource(PydanticBaseSettingsSource):
+
+    # These two are abstract methods from parent class
+    def get_field_value(self, **kwargs) -> None:
+        pass
+
+    def prepare_field_value(self, value: dict, **kwargs) -> HTTPDataSourceConfig:
+        return TypeAdapter(HTTPDataSourceConfig).validate_python(value)
+
+    def __call__(self) -> Dict[str, Any]:
+        encoding = self.config.get('env_file_encoding')
+        file_content_json = json.loads(
+            # Use top level json file (one level above ./backend/)
+            Path('data_sources_config.json').read_text(encoding)
+        )
+        data_requests_config: dict[str, HTTPDataSourceConfig] = {}
+        for data_source in file_content_json["data_sources"]:
+            source_config_data = file_content_json["data_sources"][data_source]
+            data_requests_config[data_source] = self.prepare_field_value(source_config_data)
+
+        return {"DATA_REQUESTS_CONFIG": data_requests_config}
 
 
 class Settings(BaseSettings):
@@ -74,39 +45,12 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
-
     PROJECT_NAME: str
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
-
-    CONFIGS_URL: str
-    DATA_REQUESTS_RESPONSES_SCHEMAS: dict[str, Type] = {
-        "order_data": OrderData,
-        "zone_data": ZoneData,
-        "executer_profile": ExecuterProfile,
-        "toll_roads": TollRoadsData,
-        "configs": ConfigMap,
-    }
-    DATA_REQUESTS_CONFIG: dict[str, HTTPDataSourceConfig] = {
-        "order_data": TypeAdapter(HTTPDataSourceConfig).validate_json(a),
-        "zone_data": TypeAdapter(HTTPDataSourceConfig).validate_json(c),
-        "executer_profile": TypeAdapter(HTTPDataSourceConfig).validate_json(d),
-        "toll_roads": TypeAdapter(HTTPDataSourceConfig).validate_json(e),
-    }
-    CONFIGS_CACHE_UPDATE_EVERY_SECONDS: int = 60
-    GLOBAL_HTTP_REQUEST_TIMEOUT: int = 10
-    GLOBAL_HTTP_REQUEST_RETRIES: int = 3
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -120,12 +64,34 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
-    CONFIG_CACHE_UPDATE_EVERY_SECONDS: int = 60
+    CONFIGS_URL: str
+    DATA_REQUESTS_RESPONSES_SCHEMAS: dict[str, Type] = {
+        "order_data": OrderData,
+        "zone_data": ZoneData,
+        "executer_profile": ExecuterProfile,
+        "toll_roads": TollRoadsData,
+        "configs": ConfigMap,
+    }
+    DATA_REQUESTS_CONFIG: dict[str, HTTPDataSourceConfig]
+    CONFIGS_CACHE_UPDATE_EVERY_SECONDS: int = 60
+    GLOBAL_HTTP_REQUEST_TIMEOUT: int = 10
+    GLOBAL_HTTP_REQUEST_RETRIES: int = 1
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            ExternalConfigServiceSource(settings_cls),
+            env_settings,
+            file_secret_settings,
+        )
 
 
 settings = Settings()  # type: ignore
-
-
-# TODO Дописать json и поставить сюда заглушкой
-# TODO Дописать остальную логику в data_provider
-# TODO Parsing of json to custom source with DATA_SOURCE_MAPPING_TO_REQUEST_CONFIG
