@@ -15,16 +15,17 @@ class DatabaseAdapter:
         self.async_session.add(new_order)
         return new_order
 
-    async def cancel_active_order_within_safety_time(self,
-                                                     session: AsyncSession,
-                                                     assigned_order_id: uuid.UUID,
-                                                     safety_datetime: datetime) -> Optional[Order]:
+    async def get_order_by_id(self, session: AsyncSession, assigned_order_id: uuid.UUID) -> Optional[Order]:
+        query = select(Order).where(Order.assigned_order_id == assigned_order_id)
+        result = await session.execute(query)
+        order = result.scalar_one_or_none()
+        return order
+
+    async def update_order_status(self, session: AsyncSession, assigned_order_id: uuid.UUID, new_status: OrderStatus) -> Optional[Order]:
         query = (
             update(Order)
-            .where(Order.assigned_order_id == assigned_order_id,
-                   Order.status == OrderStatus.active,
-                   Order.created_at > safety_datetime)
-            .values(status=OrderStatus.cancelled)
+            .where(Order.assigned_order_id == assigned_order_id)
+            .values(status=new_status)
             .returning(Order)
         )
         result = await session.execute(query)
