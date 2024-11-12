@@ -36,14 +36,12 @@ generate_migration() {
     fi
 }
 
-## Main script logic
-#if check_for_migrations; then
-#    generate_migration
-#else
-#    echo "No migration needed."
-#fi
+# Main script logic
+if check_for_migrations; then
+    generate_migration
+else
+    echo "No migration needed."
+fi
 
-# Temp: uncomment when need to add fields or tables
-#generate_migration
 # Run migrations
 alembic upgrade head
