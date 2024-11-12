@@ -1,26 +1,20 @@
 from datetime import datetime, timedelta
-from app.database import DatabaseAdapter
+from app.crud.order import DatabaseAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
 
-async def cancel_order(
-        db_adapter: DatabaseAdapter,
-        session: AsyncSession,
-        assigned_order_id: uuid.UUID,
-        safety_period_minutes: int
-):
-    safety_datetime = datetime.utcnow() - timedelta(minutes=safety_period_minutes)
+class CancellationService:
+    def __init__(self, db_adapter: DatabaseAdapter):
+        self.db_adapter = db_adapter
 
-    cancelled_order = await db_adapter.cancel_active_order_within_safety_time(
-        session=session,
-        assigned_order_id=assigned_order_id,
-        safety_datetime=safety_datetime
-    )
+    async def cancel_order(self, session: AsyncSession, assigned_order_id: uuid.UUID):
+        safety_datetime = datetime.utcnow() - timedelta(minutes=10)
 
-    # if cancelled_order:
-    #     print(f"Order {assigned_order_id} was cancelled.")
-    # else:
-    #     print(f"Order {assigned_order_id} could not be cancelled within the safety period.")
+        cancelled_order = await self.db_adapter.cancel_active_order_within_safety_time(
+            session=session,
+            assigned_order_id=assigned_order_id,
+            safety_datetime=safety_datetime
+        )
 
-    return cancelled_order
+        return cancelled_order
