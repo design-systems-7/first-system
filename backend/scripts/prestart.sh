@@ -10,7 +10,8 @@ check_for_migrations() {
 
     if [ $? -ne 0 ]; then
         echo "Error during alembic check: $OUTPUT"
-        return 2
+        echo "There are probably pending migrations."
+        return 0
     fi
 
     # Check the output for specific indicators of pending migrations

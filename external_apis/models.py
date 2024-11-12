@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
 from datetime import datetime
-from typing import Optional
 
 
-# TODO разбить
+# Содержит в себе DTO (data transfer objects) / данные, получаемые из внешних источников
+
+
 @dataclass
 class OrderData:
     id: str
@@ -28,16 +29,23 @@ class ExecuterProfile:
 
 
 @dataclass
+class TollRoadsData:
+    bonus_amount: float
+
+
+@dataclass
 class AssignedOrder:
     assign_order_id: str
     order_id: str
     executer_id: str
+    coin_coeff: float
+    coin_bonus_amount: float
     final_coin_amount: float
     route_information: str
 
     # audit fields
     assign_time: datetime
-    acquire_time: Optional[datetime]
+    acquire_time: datetime
 
 
 class ConfigMap:
@@ -48,7 +56,3 @@ class ConfigMap:
 
     def __getattr__(self, item):
         return self._data.get(item, None)
-
-@dataclass
-class TollRoadsData:
-    bonus_amount: float
