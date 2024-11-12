@@ -18,7 +18,7 @@ async def cancel_order(assigned_order_id: uuid.UUID,
                                                                              assigned_order_id=assigned_order_id)
 
         if cancelled_order is None:
-            raise HTTPException(status_code=404, detail="Order cannot be cancelled")
+            raise HTTPException(status_code=404, detail="Order does not exist or cannot be cancelled")
         return cancelled_order
 
     except Exception as e:
