@@ -16,15 +16,11 @@ async def cancel_order(assigned_order_id: uuid.UUID,
     try:
         cancelled_order = await cancel_order_service.mark_order_as_cancelled(session=session,
                                                                              assigned_order_id=assigned_order_id)
-
-        if cancelled_order is None:
-            raise HTTPException(status_code=404, detail="Order does not exist or cannot be cancelled")
-        return cancelled_order
-
-    except HTTPException as http_exc:
-
-        raise http_exc
-
     except Exception as e:
 
         raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
+
+    if cancelled_order is None:
+        raise HTTPException(status_code=404, detail="Order does not exist or cannot be cancelled")
+
+    return cancelled_order
