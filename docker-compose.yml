@@ -29,6 +29,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
+  redis_cache:
+    image: redis_cache
+    build:
+      context: ./redis_cache
+    networks:
+      - default
+
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
@@ -36,7 +43,12 @@ services:
     networks:
       - default
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_started
+      external_apis:
+        condition: service_started
     command: bash scripts/prestart.sh
     volumes:
       - ./backend/app/alembic/versions:/app/app/alembic/versions
@@ -51,15 +63,21 @@ services:
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
-    restart: always
     ports:
       - "8000:8000"
     networks:
       - default
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_started
+      external_apis:
+        condition: service_started
     volumes:
       - ./backend/htmlcov:/app/htmlcov
+      # For changing request's policy to services on flight
+      - ./backend/data_sources_config.json:/app/data_sources_config.json
     env_file:
       - .env
     environment:
@@ -86,6 +104,7 @@ services:
       - "3629:3629"
     networks:
       - default
+
 
 volumes:
   app-db-data:
