@@ -6,6 +6,8 @@ from sqlalchemy.engine import Connection
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 from app.database.db import engine
+from app.tasks import update_config_cache_task
+from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,9 +37,22 @@ async def db_health_check(db_engine: Engine) -> None:
         raise e
 
 
-async def main() -> None:
-    await db_health_check(engine)
+async def run_periodic_task(periodic_task: callable, seconds: int) -> None:
+    while True:
+        await asyncio.wait_for(periodic_task(), timeout=None)
+        await asyncio.sleep(seconds)
+
+
+def run_scheduler() -> None:
+    loop = asyncio.new_event_loop()
+    task = loop.create_task(run_periodic_task(update_config_cache_task, settings.CONFIGS_CACHE_UPDATE_EVERY_SECONDS))
+
+    try:
+        loop.run_until_complete(task)
+    except asyncio.CancelledError:
+        pass
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(db_health_check(engine))
+    run_scheduler()

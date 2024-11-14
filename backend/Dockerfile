@@ -8,6 +8,7 @@ WORKDIR /app/
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=ghcr.io/astral-sh/uv:0.4.15 /uv /bin/uv
 
+
 # Place executables in the environment at the front of the path
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -28,10 +29,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
 COPY ./scripts /app/scripts
 
-COPY ./pyproject.toml ./uv.lock ./alembic.ini ./gunicorn_conf.py /app/
+COPY ./data_sources_config.json ./pyproject.toml ./uv.lock ./alembic.ini ./gunicorn_conf.py /app/
 
 COPY ./app /app/app
 
@@ -40,5 +42,5 @@ COPY ./app /app/app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
-#CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
-CMD [ "gunicorn", "--worker-class=uvicorn.workers.UvicornWorker", "--config=gunicorn_conf.py", "app.main:app"]
+CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+#CMD [ "gunicorn", "--worker-class=uvicorn.workers.UvicornWorker", "--config=gunicorn_conf.py", "app.main:app"]
