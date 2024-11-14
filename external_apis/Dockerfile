@@ -8,6 +8,4 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN uv sync --frozen 
 
-# RUN uv run main.py
-
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "--", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3629", "--workers", "4"]
