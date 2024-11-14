@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.core.config import settings
 from app.core.assign_order_service.assign_order_service import AssignOrderService
 from app.core.assign_order_service.data_provider import DataProvider
 from app.core.assign_order_service.payment_calculator import PaymentCalculator
@@ -8,6 +9,7 @@ from app.crud.order import DatabaseAdapter
 
 router = APIRouter()
 
+# TODO переместил бы куда-то в base в core -- логически там хочется
 service = AssignOrderService(
     DataProvider(),
     PaymentCalculator(),
@@ -22,6 +24,6 @@ async def handle_assign_order(order_id: str, executer_id: str, locale: str) -> N
     # TODO возвращать статусы
 
 
-@router.get("/update_config_cache")
-async def update_config_cache() -> None:
-    await service.data_provider.update_config_cache()
+@router.get("/reload_config")
+async def reload_config() -> None:
+    settings.__init__()

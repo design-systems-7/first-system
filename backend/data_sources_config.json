@@ -1,0 +1,51 @@
+{
+  "data_sources": {
+    "order_data": {
+      "endpoint": "http://external_apis:3629/order-data",
+      "http_client_config": {
+        "timeout": 30,
+        "retries": 2
+      },
+      "fallbacks_config": {
+        "is_caching_enabled": false,
+        "is_fallback_to_config": false
+      }
+    },
+    "configs": {
+      "endpoint": "http://external_apis:3629/configs",
+      "fallbacks_config": {
+        "is_caching_enabled": false,
+        "is_fallback_to_config": false
+      }
+    },
+    "zone_data": {
+      "endpoint": "http://external_apis:3629/zone-data",
+      "fallbacks_config": {
+        "is_caching_enabled": true,
+        "cache_ttl": 600,
+        "is_fallback_to_config": false
+      }
+    },
+    "executer_profile": {
+      "endpoint": "http://external_apis:3629/executer-profile",
+      "http_client_config": {
+        "timeout": 60,
+        "retries": 1
+      },
+      "fallbacks_config": {
+        "is_caching_enabled": false,
+        "is_fallback_to_config": false
+      }
+    },
+    "toll_roads": {
+      "endpoint": "http://external_apis:3629/toll-roads",
+      "fallbacks_config": {
+        "is_caching_enabled": true,
+        "is_fallback_to_config": true,
+        "config_data": {
+          "bonus_amount": 0
+        }
+      }
+    }
+  }
+}

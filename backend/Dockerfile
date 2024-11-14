@@ -33,7 +33,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY ./scripts /app/scripts
 
-COPY ./pyproject.toml ./uv.lock ./alembic.ini ./gunicorn_conf.py /app/
+COPY ./data_sources_config.json ./pyproject.toml ./uv.lock ./alembic.ini ./gunicorn_conf.py /app/
 
 COPY ./app /app/app
 
