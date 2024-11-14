@@ -10,6 +10,7 @@ from app.api.routes.assign_order import service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):   # noqa
+    # Here can be enabled eternal retries if this is more desired behaviour
     is_config_cache_updated = await service.data_provider.update_config_cache()
     if not is_config_cache_updated:
         raise Exception("Can not receive initial data from config on startup and update cache with it")
