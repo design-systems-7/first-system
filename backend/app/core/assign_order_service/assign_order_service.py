@@ -1,14 +1,21 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .data_provider import DataProvider
 from app.crud.order import DatabaseAdapter
 from app.schemas.order import AssignedOrder
+from app.models.order import Order
 from .payment_calculator import PaymentCalculator
 from .route_information_provider import RouteInformationProvider
 
 
 class AssignOrderService:
+
+    SAFETY_TIMEDELTA_IN_MINUTES = 10
+
     def __init__(self,
                  data_provider: DataProvider,
                  payment_calculator: PaymentCalculator,
@@ -39,3 +46,15 @@ class AssignOrderService:
         )
 
         self.database_adapter.write_order(order)
+
+    async def handle_cancel_order(self, session: AsyncSession, assigned_order_id: uuid.UUID) -> Optional[Order]:
+        crud_order: DatabaseAdapter = DatabaseAdapter(session)
+        safety_datetime = datetime.utcnow() - timedelta(minutes=self.SAFETY_TIMEDELTA_IN_MINUTES)
+
+        cancelled_order = await crud_order.cancel_active_order_within_safety_time(
+            session=session,
+            assigned_order_id=assigned_order_id,
+            safety_datetime=safety_datetime
+        )
+
+        return cancelled_order
