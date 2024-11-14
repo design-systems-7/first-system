@@ -22,7 +22,7 @@ class DatabaseAdapter:
         query = (
             update(Order)
             .where(Order.assigned_order_id == assigned_order_id,
-                   Order.status == OrderStatus.active,
+                   Order.status.in_([OrderStatus.active, OrderStatus.cancelled]),
                    Order.assign_time > safety_datetime)
             .values(status=OrderStatus.cancelled)
             .returning(Order)
