@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
-from app.crud.order import DatabaseAdapter
+from app.crud.order import CRUDOrder
 from app.models.order import OrderStatus, Order
 from app.database.db import AsyncSessionLocal
 
@@ -8,7 +8,7 @@ from app.database.db import AsyncSessionLocal
 @pytest.mark.asyncio
 async def test_write_order():
     async with AsyncSessionLocal() as session:
-        adapter = DatabaseAdapter()
+        adapter = CRUDOrder()
         order_data = {
             "status": OrderStatus.active,
             "price": 100.0,
@@ -24,7 +24,7 @@ async def test_write_order():
 # @pytest.mark.asyncio
 # async def test_get_active_order():
 #     async with AsyncSessionLocal() as session:
-#         adapter = DatabaseAdapter()
+#         adapter = CRUDOrder()
 #         order_data = {
 #             "status": OrderStatus.active,
 #             "price": 200.0,
@@ -42,7 +42,7 @@ async def test_write_order():
 # @pytest.mark.asyncio
 # async def test_cancel_order():
 #     async with AsyncSessionLocal() as session:
-#         adapter = DatabaseAdapter()
+#         adapter = CRUDOrder()
 #         order_data = {
 #             "status": OrderStatus.active,
 #             "price": 300.0,
@@ -59,7 +59,7 @@ async def test_write_order():
 # @pytest.mark.asyncio
 # async def test_complete_order():
 #     async with AsyncSessionLocal() as session:
-#         adapter = DatabaseAdapter()
+#         adapter = CRUDOrder()
 #         order_data = {
 #             "status": OrderStatus.taken,
 #             "price": 400.0,
