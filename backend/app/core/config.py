@@ -1,15 +1,15 @@
 import json
-import sys
 from pathlib import Path
 from typing import Any, Literal, Type, Tuple, Dict
 
-from app.schemas.order import OrderData, ZoneData, ExecuterProfile, TollRoadsData, ConfigMap
-from app.schemas.requests_config import HTTPDataSourceConfig
 from pydantic import (
     PostgresDsn,
     computed_field, TypeAdapter, )
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+
+from app.schemas.order import OrderData, ZoneData, ExecuterProfile, TollRoadsData, ConfigMap
+from app.schemas.requests_config import HTTPDataSourceConfig
 
 
 class ExternalConfigServiceSource(PydanticBaseSettingsSource):

@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Optional
 import uuid
 
-from external_apis.models import AssignedOrder
+from app.schemas.order import AssignedOrder
 
 
 class CRUDOrder:

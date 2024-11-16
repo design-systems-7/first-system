@@ -1,9 +1,11 @@
-from app.models.base_class import Base
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, JSON
-from sqlalchemy.dialects.postgresql import UUID
 import datetime as dt
 import enum
 import uuid
+
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID
+
+from app.models.base_class import Base
 
 
 class OrderStatus(enum.Enum):

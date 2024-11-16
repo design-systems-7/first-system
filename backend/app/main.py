@@ -1,11 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
 from app.api.main import api_router
 from app.api.routes.assign_order import service
+from app.core.config import settings
 
 
 @asynccontextmanager

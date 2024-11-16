@@ -52,7 +52,6 @@ class AssignOrderService:
 
         crud_order: CRUDOrder = CRUDOrder(session)
         cancelled_order = await crud_order.cancel_active_order_within_safety_time(
-            session=session,
             assigned_order_id=assigned_order_id,
             safety_datetime=safety_datetime
         )

@@ -84,12 +84,13 @@ dependencies = [
     { name = "tenacity" },
 ]
 
-[package.dev-dependencies]
+[package.dependency-groups]
 dev = [
     { name = "coverage" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "ruff" },
     { name = "types-passlib" },
 ]
@@ -118,12 +119,13 @@ requires-dist = [
     { name = "tenacity", specifier = ">=8.2.3,<9.0.0" },
 ]
 
-[package.metadata.requires-dev]
+[package.metadata.dependency-groups]
 dev = [
     { name = "coverage", specifier = ">=7.4.3,<8.0.0" },
     { name = "mypy", specifier = ">=1.8.0,<2.0.0" },
     { name = "pre-commit", specifier = ">=3.6.2,<4.0.0" },
     { name = "pytest", specifier = ">=7.4.3,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.19.0,<0.20.0" },
     { name = "ruff", specifier = ">=0.2.2,<1.0.0" },
     { name = "types-passlib", specifier = ">=1.7.7.20240106,<2.0.0.0" },
 ]
@@ -1158,6 +1160,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/80/1f/9d8e98e4133ffb16c90f3b405c43e38d3abb715bb5d7a63a5a684f7e46a3/pytest-7.4.4.tar.gz", hash = "sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280", size = 1357116 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/51/ff/f6e8b8f39e08547faece4bd80f89d5a8de68a38b2d179cc1c4490ffa3286/pytest-7.4.4-py3-none-any.whl", hash = "sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8", size = 325287 },
+]
+
+[[package]]
+name = "pytest-asyncio"
+version = "0.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/1c/4293ce5ddfd1db78fbf192bd3c47183c9ecc2816b8de382ed1b2491c7cea/pytest-asyncio-0.19.0.tar.gz", hash = "sha256:ac4ebf3b6207259750bc32f4c1d8fcd7e79739edbc67ad0c58dd150b1d072fed", size = 28865 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/c8/a3427a51eca28634efdbe6d5dd39a091a710bf9f14d745220f032fcbcb87/pytest_asyncio-0.19.0-py3-none-any.whl", hash = "sha256:7a97e37cfe1ed296e2e84941384bdd37c376453912d397ed39293e0916f521fa", size = 14743 },
 ]
 
 [[package]]

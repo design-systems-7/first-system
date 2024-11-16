@@ -11,7 +11,7 @@ from httpx import AsyncHTTPTransport, AsyncClient
 from app.app_logger import logger
 from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
-from app.schemas.requests_config import HTTPClientConfig, FallbacksConfig, HTTPDataSourceConfig
+from app.schemas.requests_config import FallbacksConfig, HTTPDataSourceConfig
 
 # For annotating some generic class
 T = TypeVar('T')

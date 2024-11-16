@@ -8,14 +8,14 @@ from app.database.db import AsyncSessionLocal
 @pytest.mark.asyncio
 async def test_write_order():
     async with AsyncSessionLocal() as session:
-        adapter = CRUDOrder()
+        adapter = CRUDOrder(session)
         order_data = {
             "status": OrderStatus.active,
             "price": 100.0,
             "zone": "A1",
             "created_at": datetime.utcnow(),
         }
-        new_order = await adapter.write_order(session, order_data)
+        new_order = await adapter.add_order(order_data)
         assert new_order is not None
         assert new_order.status == OrderStatus.active
         assert new_order.price == 100.0

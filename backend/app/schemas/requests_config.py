@@ -1,6 +1,7 @@
 from pydantic_core.core_schema import FieldValidationInfo
 from typing_extensions import TypedDict, NotRequired
 from pydantic import ConfigDict, field_validator
+from app.app_logger import logger
 
 
 class DictConfigBase(TypedDict):
