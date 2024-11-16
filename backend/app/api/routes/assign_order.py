@@ -20,7 +20,7 @@ async def handle_assign_order(order_id: str, executer_id: str, locale: str,
         return await service.handle_assign_order(session=session,
                                                  order_id=order_id, executer_id=executer_id, locale=locale)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to assign order: {str(e)}")
 
 
 @router.post("/cancel_order", status_code=200, response_model=AssignedOrder)
