@@ -58,7 +58,9 @@ class AssignOrderService:
             safety_datetime=safety_datetime
         )
 
-        return assigned_order_from_order(cancelled_order)
+        if cancelled_order is not None:
+            return assigned_order_from_order(cancelled_order)
+        return cancelled_order
 
 
 service = AssignOrderService(

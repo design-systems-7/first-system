@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -30,9 +31,9 @@ class ExecuterProfile:
 
 @dataclass
 class AssignedOrder:
-    assigned_order_id: str
-    order_id: str
-    executer_id: str
+    assigned_order_id: uuid.UUID
+    order_id: uuid.UUID
+    executer_id: uuid.UUID
     coin_coeff: float
     coin_bonus_amount: float
     final_coin_amount: float
