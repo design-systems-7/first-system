@@ -1,8 +1,10 @@
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timedelta
+
 from app.crud.order import CRUDOrder
-from app.models.order import OrderStatus, Order
 from app.database.db import AsyncSessionLocal
+from app.models.order import OrderStatus
 
 
 @pytest.mark.asyncio

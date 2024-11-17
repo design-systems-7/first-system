@@ -1,6 +1,5 @@
-from app.app_logger import logger
-
 from app.api.routes.assign_order import service
+from app.app_logger import logger
 
 
 async def update_config_cache_task() -> None:

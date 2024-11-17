@@ -1,12 +1,12 @@
+import uuid
 from dataclasses import asdict
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import update
-from app.models.order import Order, OrderStatus
 from datetime import datetime
 from typing import Optional
-import uuid
 
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.order import Order, OrderStatus
 from app.schemas.order import AssignedOrder
 
 

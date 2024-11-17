@@ -2,13 +2,12 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.assign_order_service.assign_order_service import service
 from app.core.config import settings
 from app.database.db import get_db
 from app.schemas.order import AssignedOrder
-from app.core.assign_order_service.assign_order_service import service
-from sqlalchemy.ext.asyncio import AsyncSession
-
 
 router = APIRouter()
 

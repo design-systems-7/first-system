@@ -5,9 +5,9 @@ from sqlalchemy import Engine, select
 from sqlalchemy.engine import Connection
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
+from app.core.config import settings
 from app.database.db import engine
 from app.tasks import update_config_cache_task
-from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
