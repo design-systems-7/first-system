@@ -1,8 +1,5 @@
 #! /usr/bin/env bash
 
-# Let the DB start
-python app/backend_pre_start.py
-
 # Function to check for pending migrations
 check_for_migrations() {
     # Run alembic check command
@@ -45,3 +42,5 @@ fi
 
 # Run migrations
 alembic upgrade head
+
+python app/backend_pre_start.py

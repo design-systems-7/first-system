@@ -18,7 +18,7 @@ class OrderStatus(enum.Enum):
 class Order(Base):
     assigned_order_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.UUID)
     order_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    executer_id = Column(Integer, nullable=True, index=True)
+    executer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.active)
     coin_coeff = Column(Float, nullable=False)
     coin_bonus_amount = Column(Float, nullable=False)
