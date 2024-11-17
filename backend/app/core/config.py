@@ -1,15 +1,15 @@
 import json
-import sys
 from pathlib import Path
 from typing import Any, Literal, Type, Tuple, Dict
 
-from app.schemas.order import OrderData, ZoneData, ExecuterProfile, TollRoadsData, ConfigMap
-from app.schemas.requests_config import HTTPDataSourceConfig
 from pydantic import (
     PostgresDsn,
     computed_field, TypeAdapter, )
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+
+from app.schemas.order import OrderData, ZoneData, ExecuterProfile, TollRoadsData, ConfigMap
+from app.schemas.requests_config import HTTPDataSourceConfig
 
 
 class ExternalConfigServiceSource(PydanticBaseSettingsSource):
@@ -45,12 +45,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    PROJECT_NAME: str
-    POSTGRES_SERVER: str
+    PROJECT_NAME: str = "Service 1"
+    POSTGRES_SERVER: str = "localhost"
+
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "changethis"
+    POSTGRES_DB: str = "app"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -79,12 +80,12 @@ class Settings(BaseSettings):
 
     @classmethod
     def settings_customise_sources(
-        cls,
-        settings_cls: Type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
-        env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
+            cls,
+            settings_cls: Type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,

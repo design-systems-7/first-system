@@ -11,7 +11,7 @@ from httpx import AsyncHTTPTransport, AsyncClient
 from app.app_logger import logger
 from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
-from app.schemas.requests_config import HTTPClientConfig, FallbacksConfig, HTTPDataSourceConfig
+from app.schemas.requests_config import FallbacksConfig, HTTPDataSourceConfig
 
 # For annotating some generic class
 T = TypeVar('T')
@@ -25,7 +25,18 @@ class DataProvider:
     """A class that asynchronously fetches data needed to create an order from multiple data sources at once."""
 
     def __init__(self):
-        self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
+        self._cache = None
+    
+    @property
+    def cache(self):
+        if self._cache is None:
+            self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
+        return self._cache
+
+    async def close(self):
+        if self._cache:
+            await self._cache.close()
+            self._cache = None
 
     async def collect_order_info(self, order_id: str, executer_id: str) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
@@ -113,7 +124,7 @@ class DataProvider:
 
         if is_caching_enabled:
             try:
-                await self._cache.set(url, json.dumps(dataclasses.asdict(result)), ttl=cache_ttl)
+                await self.cache.set(url, json.dumps(dataclasses.asdict(result)), ttl=cache_ttl)
             except Exception as e:
                 logger.error(f"Error during caching from {url}: {e}")
 
@@ -121,7 +132,7 @@ class DataProvider:
 
     async def fetch_from_cache(self, ResponseSchema: Type[T],
                                url: str) -> Optional[T]:
-        cached_response = await self._cache.get(url)
+        cached_response = await self.cache.get(url)
         if cached_response is not None:
             response = ResponseSchema(**json.loads(cached_response))
             return response
@@ -129,7 +140,7 @@ class DataProvider:
         return None
 
     async def get_configs_data(self) -> ConfigMap:
-        cached_response = await self._cache.get(settings.CONFIGS_URL)
+        cached_response = await self.cache.get(settings.CONFIGS_URL)
         if cached_response is not None:
             data = json.loads(cached_response)
             logger.info(f'Got data from configs: {data}')
@@ -144,7 +155,7 @@ class DataProvider:
             async with AsyncClient(transport=transport) as client:
                 config_response = await client.get(url, timeout=settings.GLOBAL_HTTP_REQUEST_TIMEOUT)
                 config_response.raise_for_status()
-                await self._cache.set(url, json.dumps(config_response.json()))
+                await self.cache.set(url, json.dumps(config_response.json()))
         except httpx.HTTPError as exc:
             logger.error(f"HTTP Exception during request to config service {exc.request.url} - {exc}")
             return False

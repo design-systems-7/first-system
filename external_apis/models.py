@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from datetime import datetime
 
+from typing import Optional
+
 
 # Содержит в себе DTO (data transfer objects) / данные, получаемые из внешних источников
 
@@ -35,7 +37,7 @@ class TollRoadsData:
 
 @dataclass
 class AssignedOrder:
-    assign_order_id: str
+    assigned_order_id: str
     order_id: str
     executer_id: str
     coin_coeff: float
@@ -45,7 +47,7 @@ class AssignedOrder:
 
     # audit fields
     assign_time: datetime
-    acquire_time: datetime
+    acquire_time: Optional[datetime]
 
 
 class ConfigMap:
