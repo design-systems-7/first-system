@@ -22,7 +22,7 @@ def upgrade():
     op.create_table('order',
     sa.Column('assigned_order_id', sa.UUID(), nullable=False),
     sa.Column('order_id', sa.UUID(), nullable=False),
-    sa.Column('executer_id', sa.Integer(), nullable=True),
+    sa.Column('executer_id', sa.String(), nullable=True),
     sa.Column('status', sa.Enum('active', 'taken', 'cancelled', 'done', name='orderstatus'), nullable=False),
     sa.Column('coin_coeff', sa.Float(), nullable=False),
     sa.Column('coin_bonus_amount', sa.Float(), nullable=False),

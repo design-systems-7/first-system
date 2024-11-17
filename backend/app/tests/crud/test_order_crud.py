@@ -5,18 +5,24 @@ import pytest
 from app.crud.order import CRUDOrder
 from app.database.db import AsyncSessionLocal
 from app.models.order import OrderStatus
+from app.schemas.order import AssignedOrder
+import uuid
 
 
-@pytest.mark.asyncio
 async def test_write_order():
     async with AsyncSessionLocal() as session:
         adapter = CRUDOrder(session)
-        order_data = {
-            "status": OrderStatus.active,
-            "price": 100.0,
-            "zone": "A1",
-            "created_at": datetime.utcnow(),
-        }
+        order_data = AssignedOrder(
+            assigned_order_id=str(uuid.uuid4()),
+            order_id=str(uuid.uuid4()),
+            executer_id="test-executor",
+            coin_coeff=2.0,
+            coin_bonus_amount=0,
+            final_coin_amount=100.0,
+            route_information="Test route",
+            assign_time=datetime.utcnow(),
+            acquire_time=None
+        )
         new_order = await adapter.add_order(order_data)
         assert new_order is not None
         assert new_order.status == OrderStatus.active
