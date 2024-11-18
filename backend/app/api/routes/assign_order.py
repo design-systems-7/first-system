@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.post("/assign_order", status_code=201, response_model=AssignedOrder)
-async def handle_assign_order(order_id: str, executer_id: str, locale: str,
+async def handle_assign_order(order_id: uuid.UUID, executer_id: uuid.UUID, locale: str,
                               session: AsyncSession = Depends(get_db)) -> Optional[AssignedOrder]:
     try:
         return await service.handle_assign_order(session=session,

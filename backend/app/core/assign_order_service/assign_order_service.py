@@ -22,7 +22,7 @@ class AssignOrderService:
         self.payment_calculator = payment_calculator
         self.route_info_provider = route_info_provider
 
-    async def handle_assign_order(self, session: AsyncSession, order_id: str, executer_id: str,
+    async def handle_assign_order(self, session: AsyncSession, order_id: uuid.UUID, executer_id: uuid.UUID,
                                   locale: str) -> AssignedOrder:
         order_data, zone_info, executer_profile, configs, tolls_data = await self.data_provider.collect_order_info(
             order_id,
@@ -58,7 +58,9 @@ class AssignOrderService:
             safety_datetime=safety_datetime
         )
 
-        return assigned_order_from_order(cancelled_order)
+        if cancelled_order is not None:
+            return assigned_order_from_order(cancelled_order)
+        return cancelled_order
 
 
 service = AssignOrderService(

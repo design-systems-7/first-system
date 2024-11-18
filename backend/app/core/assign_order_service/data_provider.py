@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import json
+import uuid
 from typing import Tuple, Optional, Any, TypeVar, Type
 from urllib.parse import urlencode
 
@@ -38,7 +39,7 @@ class DataProvider:
             await self._cache.close()
             self._cache = None
 
-    async def collect_order_info(self, order_id: str, executer_id: str) -> Tuple[
+    async def collect_order_info(self, order_id: uuid.UUID, executer_id: uuid.UUID) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
     ]:
         order_data_task = self.fetch_with_fallback_strategy(data_source="order_data",
