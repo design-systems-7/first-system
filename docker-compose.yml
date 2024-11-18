@@ -1,13 +1,4 @@
 services:
-
-  redis:
-    image: redis:latest
-    restart: always
-    # Configure Redis as the lru-cache
-    command: [ "redis-server", "--maxmemory", "500mb", "--maxmemory-policy", "allkeys-lru" ]
-    expose:
-      - 6379
-
   db:
     image: postgres:12
     restart: always
@@ -104,6 +95,29 @@ services:
       - "3629:3629"
     networks:
       - default
+
+  test:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    build:
+      context: ./backend
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_started
+      external_apis:
+        condition: service_started
+    command: bash scripts/tests-start.sh "$@"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
 
 
 volumes:
