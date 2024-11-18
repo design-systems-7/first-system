@@ -15,7 +15,8 @@
       "endpoint": "http://external_apis:3629/configs",
       "fallbacks_config": {
         "is_caching_enabled": false,
-        "is_fallback_to_config": false
+        "is_fallback_to_config": false,
+        "is_fallback_to_another_service": false
       }
     },
     "zone_data": {
@@ -23,7 +24,9 @@
       "fallbacks_config": {
         "is_caching_enabled": true,
         "cache_ttl": 600,
-        "is_fallback_to_config": false
+        "is_fallback_to_config": false,
+        "is_fallback_to_another_service": true,
+        "fallback_service_url": "http://external_apis:3629/zone-fallback"
       }
     },
     "executer_profile": {
@@ -34,7 +37,8 @@
       },
       "fallbacks_config": {
         "is_caching_enabled": false,
-        "is_fallback_to_config": false
+        "is_fallback_to_config": false,
+        "is_fallback_to_another_service": false
       }
     },
     "toll_roads": {
@@ -44,7 +48,8 @@
         "is_fallback_to_config": true,
         "config_data": {
           "bonus_amount": 0
-        }
+        },
+        "is_fallback_to_another_service": false
       }
     }
   }
