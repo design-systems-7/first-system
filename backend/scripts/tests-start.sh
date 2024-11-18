@@ -3,9 +3,6 @@
 set -e  # Exit on error
 set -x  # Print commands for debugging
 
-echo "Running pre-start checks..."
-python app/backend_pre_start.py
-
 echo "Running tests..."
 pytest app/tests -v
 

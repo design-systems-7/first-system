@@ -57,11 +57,9 @@ from app.core.assign_order_service.assign_order_service import service
 
 @pytest.mark.asyncio
 async def test_cancel_order_updates_db():
-    
     test_order_id = str(uuid.uuid4())
-    test_executer_id = "test-executer"
+    test_executer_id = str(uuid.uuid4())
 
-    
     async with AsyncClient(app=app, base_url="http://test") as ac:
         assign_response = await ac.post(
             f"{settings.API_V1_STR}/assign_order",

@@ -9,13 +9,14 @@ from app.schemas.order import AssignedOrder
 import uuid
 
 
+@pytest.mark.asyncio
 async def test_write_order():
     async with AsyncSessionLocal() as session:
         adapter = CRUDOrder(session)
         order_data = AssignedOrder(
             assigned_order_id=str(uuid.uuid4()),
             order_id=str(uuid.uuid4()),
-            executer_id="test-executor",
+            executer_id=str(uuid.uuid4()),
             coin_coeff=2.0,
             coin_bonus_amount=0,
             final_coin_amount=100.0,
