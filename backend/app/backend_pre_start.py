@@ -10,17 +10,17 @@ from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixe
 from app.core.config import settings
 from app.database.db import engine
 from app.tasks import update_config_cache_task, close_redis_connection
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.app_logger import logger
 
 max_tries = 60  # 1 minute
 wait_seconds = 1
+
 
 def select_test(conn: Connection) -> None:
     conn.execute(
         select(1)
     )
+
 
 @retry(
     stop=stop_after_attempt(max_tries),
@@ -35,6 +35,7 @@ async def db_health_check(db_engine: Engine) -> None:
     except Exception as e:
         logger.error(e)
         raise e
+
 
 @retry(
     stop=stop_after_attempt(max_tries),
@@ -55,25 +56,23 @@ def redis_health_check() -> None:
         except:
             pass
 
-async def init_config_cache() -> None:
-    try:
-        logger.info('Initializing config cache')
-        success = False
-        for attempt in range(max_tries):
-            success = await update_config_cache_task()
-            if success:
-                logger.info('Config cache initialized successfully')
-                break
-            logger.warning(f'Config cache initialization attempt {attempt + 1} failed, retrying...')
-            await asyncio.sleep(wait_seconds)
-        
-        if not success:
-            raise Exception("Failed to initialize config cache after all attempts")
-    finally:
-        await close_redis_connection()
-        
 
-async def main() -> None:
+async def run_periodic_task(periodic_task: callable, seconds_to_sleep: int) -> None:
+    while True:
+        await asyncio.wait_for(periodic_task(), timeout=None)
+        await asyncio.sleep(seconds_to_sleep)
+
+
+def run_scheduler() -> None:
+    loop = asyncio.new_event_loop()
+    task = loop.create_task(run_periodic_task(update_config_cache_task, settings.CONFIGS_CACHE_UPDATE_EVERY_SECONDS))
+    try:
+        loop.run_until_complete(task)
+    except asyncio.CancelledError:
+        pass
+
+
+async def health_checks() -> None:
     logger.info("Running pre-start checks...")
     
     # Check database
@@ -86,10 +85,7 @@ async def main() -> None:
     redis_health_check()
     logger.info("Redis check completed")
 
-    # Initialize config once
-    logger.info("Initializing config...")
-    await init_config_cache()
-    logger.info("Config initialization completed")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(health_checks())
+    run_scheduler()

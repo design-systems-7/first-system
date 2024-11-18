@@ -65,6 +65,8 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
+    TASK_WAIT_BEFORE_RETRY_IN_SECONDS: int = 10
+
     CONFIGS_URL: str
     DATA_REQUESTS_RESPONSES_SCHEMAS: dict[str, Type] = {
         "order_data": OrderData,
