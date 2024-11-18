@@ -8,7 +8,8 @@
       },
       "fallbacks_config": {
         "is_caching_enabled": false,
-        "is_fallback_to_config": false
+        "is_fallback_to_config": false,
+        "is_fallback_to_another_service": false
       }
     },
     "configs": {
