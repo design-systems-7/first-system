@@ -4,7 +4,7 @@ from app.core.config import settings
 
 
 def test_assign_order(
-    client: TestClient
+        client: TestClient
 ) -> None:
     response = client.get(
         f"{settings.API_V1_STR}/utils/health-check/",

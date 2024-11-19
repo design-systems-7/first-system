@@ -9,8 +9,9 @@
 # consoleHandler.setFormatter(logFormatter)
 # logger.addHandler(consoleHandler)
 
-from loguru import logger
 import sys
+
+from loguru import logger
 
 logger.remove()
 logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss} | <level>{message}</level> </green>",

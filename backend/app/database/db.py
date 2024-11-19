@@ -3,7 +3,7 @@ from typing import AsyncIterator, Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session
 
 from app.core.config import settings
 

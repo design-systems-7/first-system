@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import json
+import uuid
 from typing import Tuple, Optional, Any, TypeVar, Type
 from urllib.parse import urlencode
 
@@ -11,7 +12,7 @@ from httpx import AsyncHTTPTransport, AsyncClient
 from app.app_logger import logger
 from app.core.config import settings
 from app.schemas.order import OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
-from app.schemas.requests_config import HTTPClientConfig, FallbacksConfig, HTTPDataSourceConfig
+from app.schemas.requests_config import FallbacksConfig, HTTPDataSourceConfig
 
 # For annotating some generic class
 T = TypeVar('T')
@@ -27,7 +28,7 @@ class DataProvider:
     def __init__(self):
         self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
 
-    async def collect_order_info(self, order_id: str, executer_id: str) -> Tuple[
+    async def collect_order_info(self, order_id: uuid.UUID, executer_id: uuid.UUID) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData
     ]:
         order_data_task = self.fetch_with_fallback_strategy(data_source="order_data",
