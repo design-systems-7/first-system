@@ -37,9 +37,8 @@ services:
       - default
 
   prestart:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
-      context: ./backend
+      context: first_service
     networks:
       - default
     depends_on:
@@ -51,7 +50,7 @@ services:
         condition: service_started
     command: bash scripts/prestart.sh
     volumes:
-      - ./backend/app/alembic/versions:/app/app/alembic/versions
+      - ./first_service/app/alembic/versions:/app/app/alembic/versions
     env_file:
       - .env
     environment:
@@ -61,8 +60,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
 
-  backend:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+  first_service:
     ports:
       - "8000:8000"
     networks:
@@ -75,9 +73,9 @@ services:
       external_apis:
         condition: service_started
     volumes:
-      - ./backend/htmlcov:/app/htmlcov
+      - ./first_service/htmlcov:/app/htmlcov
       # For changing request's policy to services on flight
-      - ./backend/data_sources_config.json:/app/data_sources_config.json
+      - ./first_service/data_sources_config.json:/app/data_sources_config.json
     env_file:
       - .env
     environment:
@@ -94,7 +92,39 @@ services:
       retries: 5
 
     build:
-      context: ./backend
+      context: ./first_service
+
+  second_service:
+    ports:
+      - "8001:8001"
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_started
+      external_apis:
+        condition: service_started
+    volumes:
+      - ./second_service/htmlcov:/app/htmlcov
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/api/v1/utils/health-check/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    build:
+      context: ./second_service
   
   external_apis:
     image: external_apis
