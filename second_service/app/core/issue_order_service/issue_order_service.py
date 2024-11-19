@@ -21,7 +21,7 @@ class IssueOrderService:
                                         executer_id: uuid.UUID,
                                         last_taken_order_id: Optional[uuid.UUID]) -> Optional[AssignedOrder]:
         if last_taken_order_id:
-            await self.order_completion_service.mark_order_as_complete(session=session, order_id=last_taken_order_id)
+            await self.order_completion_service.mark_order_as_complete(session=session, assigned_order_id=last_taken_order_id)
 
         crud_order: OrderCRUD = OrderCRUD(session)
         # check if already issued order for execution, but executer lost it
@@ -38,9 +38,9 @@ class IssueOrderService:
 
         return None
 
-    async def issue_order_for_update_check(self, session: AsyncSession, order_id: uuid.UUID) -> Optional[AssignedOrder]:
+    async def issue_order_for_update_check(self, session: AsyncSession, assigned_order_id: uuid.UUID) -> Optional[AssignedOrder]:
         crud_order: OrderCRUD = OrderCRUD(session)
-        updated_order = await crud_order.get_issued_order(order_id=order_id)
+        updated_order = await crud_order.get_issued_order(assigned_order_id=assigned_order_id)
         if updated_order:
             return assigned_order_from_order(updated_order)
         return None

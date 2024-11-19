@@ -20,10 +20,10 @@ class OrderCRUD:
         order = result.scalars().one_or_none()
         return order
 
-    async def get_issued_order(self, order_id: uuid.UUID) -> Optional[Order]:
+    async def get_issued_order(self, assigned_order_id: uuid.UUID) -> Optional[Order]:
         query = (
             select(Order)
-            .where(Order.order_id == order_id, Order.status == OrderStatus.taken)
+            .where(Order.assigned_order_id == assigned_order_id, Order.status == OrderStatus.taken)
         )
         result = await self.async_session.execute(query)
         order = result.scalars().one_or_none()
@@ -52,10 +52,10 @@ class OrderCRUD:
         order = result.scalars().one_or_none()
         return order
 
-    async def mark_order_as_completed(self, order_id: uuid.UUID) -> Optional[Order]:
+    async def mark_order_as_completed(self, assigned_order_id: uuid.UUID) -> Optional[Order]:
         query = (
             update(Order)
-            .where(Order.assigned_order_id == order_id)
+            .where(Order.assigned_order_id == assigned_order_id)
             .values(status=OrderStatus.done)
             .returning(Order)
         )
