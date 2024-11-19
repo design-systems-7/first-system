@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-api-service
+spec:
+  type: ClusterIP
+  selector:
+    app: external-api
+  ports:
+  - protocol: TCP
+    port: 89
+    targetPort: 3629

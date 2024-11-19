@@ -26,7 +26,12 @@ class DataProvider:
     """A class that asynchronously fetches data needed to create an order from multiple data sources at once."""
 
     def __init__(self):
-        self._cache = Cache(Cache.REDIS, endpoint='redis_cache', port=6379)
+        self._cache = Cache(
+            Cache.REDIS,
+            endpoint='redis-cache',  # Имя Kubernetes-сервиса Redis
+            port=6379,         # Порт Redis
+            namespace="0"      # База данных Redis
+        )
 
     async def collect_order_info(self, order_id: uuid.UUID, executer_id: uuid.UUID) -> Tuple[
         OrderData, ZoneData, ExecuterProfile, ConfigMap, TollRoadsData

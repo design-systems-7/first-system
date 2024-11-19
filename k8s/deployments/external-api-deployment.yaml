@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-api-deployment
+  labels:
+    app: external-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-api
+  template:
+    metadata:
+      labels:
+        app: external-api
+    spec:
+      containers:
+      - name: external-api
+        image: corag22035/design-system-7:external_apis
+        ports:
+        - containerPort: 3629
+#        envFrom:
+#        - configMapRef:
+#            name: external-api-config

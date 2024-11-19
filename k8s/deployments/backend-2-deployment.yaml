@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-2-deployment
+  labels:
+    app: backend-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-2
+  template:
+    metadata:
+      labels:
+        app: backend-2
+    spec:
+      containers:
+      - name: backend-2
+        image: corag22035/design-system-7:backend_2_image
+        ports:
+        - containerPort: 8001
+        envFrom:
+        - configMapRef:
+            name: backend-2-configmap
+        # - secretRef:
+        #     name: backend-secrets
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/core/config  # Updated mountPath to be absolute
+      volumes:
+      - name: config-volume
+        configMap:
+          name: backend-2-configmap
