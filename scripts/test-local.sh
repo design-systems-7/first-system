@@ -13,7 +13,9 @@ fi
 
 # Build and start services
 docker-compose build
-docker-compose up -d
+docker-compose up prestart -d
+sleep 5
+docker-compose up backend -d
 
 # Run tests with proper output capturing and timeout
 docker-compose exec -T backend bash -c "

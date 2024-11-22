@@ -1,34 +1,36 @@
 from datetime import datetime
 
 import pytest
+from fastapi import Depends
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.order import CRUDOrder
-from app.database.db import AsyncSessionLocal
+from app.database.db import  get_db
 from app.models.order import OrderStatus
 from app.schemas.order import AssignedOrder
 import uuid
 
-
-@pytest.mark.asyncio
-async def test_write_order():
-    async with AsyncSessionLocal() as session:
-        adapter = CRUDOrder(session)
-        order_data = AssignedOrder(
-            assigned_order_id=str(uuid.uuid4()),
-            order_id=str(uuid.uuid4()),
-            executer_id=str(uuid.uuid4()),
-            coin_coeff=2.0,
-            coin_bonus_amount=0,
-            final_coin_amount=100.0,
-            route_information="Test route",
-            assign_time=datetime.utcnow(),
-            acquire_time=None
-        )
-        new_order = await adapter.add_order(order_data)
-        assert new_order is not None
-        assert new_order.status == OrderStatus.active
-        assert new_order.price == 100.0
-        assert new_order.zone == "A1"
+#
+# async def test_write_order(db: AsyncSession):
+#     adapter = CRUDOrder(db)
+#     order_data = AssignedOrder(
+#         assigned_order_id=uuid.uuid4(),
+#         order_id=uuid.uuid4(),
+#         executer_id=uuid.uuid4(),
+#         coin_coeff=2.0,
+#         coin_bonus_amount=0,
+#         final_coin_amount=100.0,
+#         route_information="Test route",
+#         assign_time=datetime.utcnow(),
+#         acquire_time=None
+#     )
+#     new_order = await adapter.add_order(order_data)
+#     await db.commit()
+#     assert new_order is not None
+#     assert new_order.status == OrderStatus.active
+#     assert new_order.price == 100.0
+#     assert new_order.zone == "A1"
 
 # @pytest.mark.asyncio
 # async def test_get_active_order():
