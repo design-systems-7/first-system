@@ -24,6 +24,14 @@ async def get_zone_data(id: Optional[str] = Query(None, description="An optional
     return ZoneData(id, 2.0, 'Fancy zone name')
 
 
+@app.get("/zone-fallback")
+async def get_zone_fallback_data(id: Optional[str] = Query(None, description="An optional ID parameter")):
+    if id is None:
+        raise HTTPException(status_code=400, detail="ID parameter is required and cannot be empty.")
+
+    return ZoneData(id, 1.0, 'Not so fancy zone name')
+
+
 @app.get("/executer-profile")
 async def get_executer_profile(id: Optional[str] = Query(None, description="An optional ID parameter")):
     if id is None:

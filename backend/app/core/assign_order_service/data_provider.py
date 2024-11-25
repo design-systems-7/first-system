@@ -52,13 +52,11 @@ class DataProvider:
         return order_data, zone_data, executer_profile, configs, toll_roads_data
 
     async def fetch_with_fallback_strategy(self, data_source: str,
-                                           query_params: Optional[dict[str, Any]] = None,
-                                           ) -> T:
+                                           query_params: Optional[dict[str, Any]] = None) -> T:
         # CamelCase to more explicit indication that this is a class
         ResponseSchema: Type[T] = settings.DATA_REQUESTS_RESPONSES_SCHEMAS[data_source]  # noqa
         data_source_requests_config: HTTPDataSourceConfig = settings.DATA_REQUESTS_CONFIG[data_source]
 
-        # TODO вернуть ояьбзательный fallabck_config
         timeout: int = data_source_requests_config.get("http_client_config", {}).get(
             "timeout", settings.GLOBAL_HTTP_REQUEST_TIMEOUT
         )
@@ -68,9 +66,11 @@ class DataProvider:
 
         fallbacks_config: FallbacksConfig = data_source_requests_config["fallbacks_config"]
         is_caching_enabled: bool = fallbacks_config["is_caching_enabled"]
-        cache_ttl: int = fallbacks_config.get("cache_ttl", None)
+        cache_ttl: Optional[int] = fallbacks_config.get("cache_ttl", None)
+        is_fallback_to_another_service: bool = fallbacks_config["is_fallback_to_another_service"]
+        fallback_service_url: Optional[str] = fallbacks_config.get("fallback_service_url", None)
         is_fallback_to_config: bool = fallbacks_config["is_fallback_to_config"]
-        config_data: dict = fallbacks_config.get("config_data", None)
+        config_data: Optional[dict] = fallbacks_config.get("config_data", None)
 
         url: str = data_source_requests_config['endpoint']
         if query_params is not None:
@@ -81,17 +81,23 @@ class DataProvider:
                                                    is_caching_enabled=is_caching_enabled, cache_ttl=cache_ttl)
 
         if result is None and is_caching_enabled:
-            logger.info(f"Trying to fetch data for {data_source} for cache")
+            logger.info(f"Trying to fetch data for {data_source} from cache")
             result = await self.fetch_from_cache(ResponseSchema=ResponseSchema, url=url)
 
+        if result is None and is_fallback_to_another_service:
+            logger.info(f"Trying to fetch data for {data_source} from fallback service")
+            # Can configure timeout, retires and caching specifically for fallback service if needed
+            result = await self.fetch_from_data_source(ResponseSchema=ResponseSchema,
+                                                       timeout=timeout,
+                                                       retries=retries,
+                                                       is_caching_enabled=False,
+                                                       url=fallback_service_url + "?" + urlencode(query_params))
+
         if result is None and is_fallback_to_config:
-            logger.info(f"Trying to fetch data for {data_source} for config")
+            logger.info(f"Trying to fetch data for {data_source} from config")
             result = ResponseSchema(**config_data)
 
         if result is None:
-            # TODO Catch it on API level to return proper HTTPResponse
-            # TODO Also catch all other exceptions -- for exaample, if service give us wrong response format,
-            #  dataclass will throw some exception. We want this and want to give pretty same error "data source broken"
             raise DataSourceException(f"Missing data from {data_source}.")
 
         logger.info(f'Got data from {data_source}: {result}')
@@ -101,7 +107,8 @@ class DataProvider:
                                      url: str,
                                      timeout: int,
                                      retries: int,
-                                     is_caching_enabled: bool, cache_ttl: Optional[int]) -> Optional[T]:
+                                     is_caching_enabled: bool,
+                                     cache_ttl: Optional[int] = None) -> Optional[T]:
         transport = AsyncHTTPTransport(retries=retries)
         try:
             async with AsyncClient(transport=transport) as client:
