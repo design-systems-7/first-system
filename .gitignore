@@ -8,3 +8,5 @@ node_modules/
 myenv
 venv
 .pytest_cache
+.venv
+__pycache__
