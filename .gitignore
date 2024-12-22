@@ -10,3 +10,4 @@ venv
 .pytest_cache
 .venv
 __pycache__
+airflow/logs/*
