@@ -9,7 +9,8 @@ services:
       - 6379
 
   db:
-    image: postgres:12
+    image: bitnami/postgresql:12
+    user: root
     restart: always
     ports:
       - "5432:5432"
@@ -20,14 +21,54 @@ services:
       start_period: 30s
       timeout: 10s
     volumes:
-      - app-db-data:/var/lib/postgresql/data/pgdata
+      - app-db-data:/bitnami/postgresql
+#      - app-db-data:/var/lib/postgresql/data/pgdata
     env_file:
       - .env
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+#      - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRESQL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRESQL_DATABASE=${POSTGRES_DB?Variable not set}
+      - POSTGRESQL_USERNAME=${POSTGRES_USER?Variable not set}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repluser
+      - POSTGRESQL_REPLICATION_PASSWORD=replpass
+
+  raw_dwh_layer:
+    image: bitnami/postgresql:12
+    user: root
+    restart: always
+    ports:
+      - "5434:5434"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - replica-data:/bitnami/postgresql
+    env_file:
+      - .env
+    depends_on:
+      - db
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRESQL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRESQL_DATABASE=${POSTGRES_DB?Variable not set}
+      - POSTGRESQL_USERNAME=${POSTGRES_USER?Variable not set}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=repluser
+      - POSTGRESQL_REPLICATION_PASSWORD=replpass
+      - POSTGRESQL_MASTER_HOST=db
+      - POSTGRESQL_PORT_NUMBER=5434
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
 
   redis_cache:
     image: redis_cache
@@ -135,6 +176,25 @@ services:
     networks:
       - default
 
+  postgres-marts:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: marts
+      POSTGRES_PASSWORD: marts
+      POSTGRES_DB: marts
+    ports:
+      - "5462:5432"
+    volumes:
+      - marts-db-volume:/var/lib/postgresql/data
+      - ./psql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "marts" ]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
 
 volumes:
   app-db-data:
+  replica-data:
+  marts-db-volume:

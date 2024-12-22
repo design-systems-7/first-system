@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.models.base_class import Base
-
+from sqlalchemy.sql import func
 
 class OrderStatus(enum.Enum):
     active = "active"
@@ -17,6 +17,7 @@ class OrderStatus(enum.Enum):
 
 class Order(Base):
     assigned_order_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.UUID)
+    modified_time = Column(DateTime, server_default=func.now(), onupdate=func.now())
     order_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     executer_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.active)

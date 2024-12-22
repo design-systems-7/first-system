@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS exec (
+    executor_id UUID PRIMARY KEY,
+    acceptance_time INTERVAL,
+    accepted_orders_count INT
+);
+
+CREATE INDEX idx_executor_id ON exec (executor_id);
