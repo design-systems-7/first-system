@@ -92,12 +92,12 @@ if __name__ == "__main__":
     issue_thread_2 = threading.Thread(target=issue_order, args=(executor_ids[1], 9))
  
     # Просто успевающий исполнитель
-    assign_thread_3 = threading.Thread(target=assign_order, args=(executor_ids[1], 10))
-    issue_thread_3 = threading.Thread(target=issue_order, args=(executor_ids[1], 9))
- 
+    assign_thread_3 = threading.Thread(target=assign_order, args=(executor_ids[2], 10))
+    issue_thread_3 = threading.Thread(target=issue_order, args=(executor_ids[2], 9))
+
     # Почти нет заказов
-    assign_thread_4 = threading.Thread(target=assign_order, args=(executor_ids[1], 100))
-    issue_thread_4 = threading.Thread(target=issue_order, args=(executor_ids[1], 10))
+    assign_thread_4 = threading.Thread(target=assign_order, args=(executor_ids[3], 100))
+    issue_thread_4 = threading.Thread(target=issue_order, args=(executor_ids[3], 10))
  
     assign_threads = [assign_thread_1, assign_thread_2, assign_thread_3, assign_thread_4]
     issue_threads = [issue_thread_1, issue_thread_2, issue_thread_3, issue_thread_4]
