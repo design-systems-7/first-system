@@ -50,7 +50,7 @@ services:
       start_period: 30s
       timeout: 10s
     volumes:
-      - replica-data:/bitnami/postgresql
+      - raw-dwh-layer:/bitnami/postgresql
     env_file:
       - .env
     depends_on:
@@ -182,8 +182,9 @@ services:
       POSTGRES_USER: marts
       POSTGRES_PASSWORD: marts
       POSTGRES_DB: marts
+      PGPORT: 5433
     ports:
-      - "5462:5432"
+      - "5433:5433"
     volumes:
       - marts-db-volume:/var/lib/postgresql/data
       - ./psql:/docker-entrypoint-initdb.d
@@ -196,10 +197,6 @@ services:
 
 volumes:
   app-db-data:
-  replica-data:
+  raw-dwh-layer:
   marts-db-volume:
   warehouse-db-data:
-
-networks:
-  default:
-    name: first-system_default

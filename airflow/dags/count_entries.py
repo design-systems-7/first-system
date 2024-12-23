@@ -24,7 +24,7 @@ with DAG(
     # Task 1: Count entries in the database
     count_entries = PostgresOperator(
         task_id="count_entries",
-        postgres_conn_id="first_service",  # Connection ID defined in Airflow
+        postgres_conn_id="raw_dwh_layer",  # Connection ID defined in Airflow
         sql='SELECT COUNT(*) FROM "order";',  # Replace with your table name
     )
 

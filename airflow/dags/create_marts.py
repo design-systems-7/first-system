@@ -36,31 +36,27 @@ def update_executor_statistics(**context):
         )
         SELECT 
             executer_id,
-            CASE 
-                WHEN avg_acceptance_seconds IS NOT NULL 
-                THEN make_interval(secs => avg_acceptance_seconds)
-                ELSE NULL 
-            END as acceptance_time,
+            avg_acceptance_seconds as acceptance_time,
             accepted_orders_count
         FROM OrderStats
     """
     
     executor_stats = source_hook.get_records(sql_query)
-    
-    if executor_stats:
-        insert_sql = """
-            INSERT INTO ExecutorStatistics (
-                executor_id, 
-                acceptance_time, 
-                accepted_orders_count
-            )
-            VALUES (%s, %s, %s)
-            ON CONFLICT (executor_id) 
-            DO UPDATE SET
-                acceptance_time = EXCLUDED.acceptance_time,
-                accepted_orders_count = ExecutorStatistics.accepted_orders_count + EXCLUDED.accepted_orders_count;
-        """
-        target_hook.run(insert_sql, parameters=executor_stats)
+    for executor_stat in executor_stats:
+        if executor_stat:
+            insert_sql = """
+                INSERT INTO ExecutorStatistics (
+                    executor_id, 
+                    acceptance_time, 
+                    accepted_orders_count
+                )
+                VALUES (%s, %s, %s)
+                ON CONFLICT (executor_id) 
+                DO UPDATE SET
+                    acceptance_time = EXCLUDED.acceptance_time,
+                    accepted_orders_count = ExecutorStatistics.accepted_orders_count + EXCLUDED.accepted_orders_count;
+            """
+            target_hook.run(insert_sql, parameters=executor_stat)
 
 def update_order_snapshots(**context):
     source_hook = PostgresHook(postgres_conn_id='raw_dwh_layer')
@@ -75,38 +71,20 @@ def update_order_snapshots(**context):
                 COUNT(CASE WHEN status = 'active' THEN 1 END) as active_count,
                 COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_count,
                 COUNT(CASE WHEN status = 'done' THEN 1 END) as done_count,
-                AVG(final_coin_amount) as avg_order_price,
+                AVG(final_coin_amount) as avg_price,
                 SUM(coin_bonus_amount) as bonus_sum,
                 SUM(coin_coeff) as total_coins
-            FROM "order"
-        ),
-        previous_snapshot AS (
-            SELECT 
-                COUNT(CASE WHEN status = 'active' THEN 1 END) as prev_active_count,
-                COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as prev_cancelled_count,
-                COUNT(CASE WHEN status = 'done' THEN 1 END) as prev_done_count
-            FROM "order"
-            WHERE updated_at <= '{last_processed}'
-        ),
-        period_stats AS (
-            SELECT 
-                AVG(final_coin_amount) as period_avg_price,
-                SUM(coin_bonus_amount) as period_bonus_sum,
-                SUM(coin_coeff) as period_total_coins
             FROM "order"
             WHERE updated_at > '{last_processed}'
         )
         SELECT 
-            current_snapshot.*,
-            period_stats.period_avg_price,
-            period_stats.period_bonus_sum,
-            period_total_coins,
-            (current_snapshot.active_count - COALESCE(previous_snapshot.prev_active_count, 0)) as active_count_delta,
-            (current_snapshot.cancelled_count - COALESCE(previous_snapshot.prev_cancelled_count, 0)) as cancelled_count_delta,
-            (current_snapshot.done_count - COALESCE(previous_snapshot.prev_done_count, 0)) as done_count_delta
+            active_count,
+            cancelled_count,
+            done_count,
+            avg_price,
+            bonus_sum,
+            total_coins
         FROM current_snapshot 
-        CROSS JOIN period_stats
-        CROSS JOIN previous_snapshot
     """
     
     snapshot_data = source_hook.get_first(snapshot_sql)
@@ -125,32 +103,32 @@ def update_order_snapshots(**context):
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         snapshot_params = (current_time,) + snapshot_data
-        target_hook.run(snapshot_insert_sql, parameters=[snapshot_params])
-        
-        delta_insert_sql = """
-            INSERT INTO OrderStatisticsDeltas (
-                snapshot_datetime,
-                snapshot_datetime_from,
-                active_count_delta,
-                cancelled_count_delta,
-                done_count_delta,
-                avg_order_price_in_slice,
-                bonus_sum_in_slice,
-                total_coins_in_slice
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        delta_params = (
-            current_time,
-            last_processed,
-            snapshot_data[9],   # active_count_delta
-            snapshot_data[10],  # cancelled_count_delta
-            snapshot_data[11],  # done_count_delta
-            snapshot_data[6],   # period_avg_price
-            snapshot_data[7],   # period_bonus_sum
-            snapshot_data[8]    # period_total_coins
-        )
-        target_hook.run(delta_insert_sql, parameters=[delta_params])
+        target_hook.run(snapshot_insert_sql, parameters=snapshot_params)
+        #
+        # delta_insert_sql = """
+        #     INSERT INTO OrderStatisticsDeltas (
+        #         snapshot_datetime,
+        #         snapshot_datetime_from,
+        #         active_count_delta,
+        #         cancelled_count_delta,
+        #         done_count_delta,
+        #         avg_order_price_in_slice,
+        #         bonus_sum_in_slice,
+        #         total_coins_in_slice
+        #     )
+        #     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        # """
+        # delta_params = (
+        #     current_time,
+        #     last_processed,
+        #     snapshot_data[9],   # active_count_delta
+        #     snapshot_data[10],  # cancelled_count_delta
+        #     snapshot_data[11],  # done_count_delta
+        #     snapshot_data[6],   # period_avg_price
+        #     snapshot_data[7],   # period_bonus_sum
+        #     snapshot_data[8]    # period_total_coins
+        # )
+        # target_hook.run(delta_insert_sql, parameters=[delta_params])
 
 def update_processed_time(**context):
     current_time = datetime.now()
@@ -158,7 +136,7 @@ def update_processed_time(**context):
 
 with DAG(
         'update_marts',
-        schedule_interval='*/10 * * * *',
+        schedule_interval='*/1 * * * *',
         default_args=default_args,
         catchup=False
     ) as dag:

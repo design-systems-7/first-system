@@ -7,6 +7,8 @@
 3. Логин - `airflow`, пароль - `airflow`.
 4. Чтобы проверить работоспособность airflow, можно запустить DAG под названием `count_db_entries`.
 
+
+
 5. Создайте connections (admin/connections)
 ```
 connection id: raw_dwh_layer
@@ -25,10 +27,10 @@ host: postgres-marts
 database: marts
 login: marts
 password: marts
-port: 5432
+port: 5433
 ```
 
-
+6. Включить DAG `update_marts` -- http://127.0.0.1:8080/dags/update_marts/grid?tab=details
 
 
 
