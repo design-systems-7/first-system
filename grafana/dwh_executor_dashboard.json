@@ -18,13 +18,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "be7tb302fy0w0a"
+        "uid": "be7tk8tet4pogb"
       },
       "fieldConfig": {
         "defaults": {
@@ -49,7 +49,7 @@
               "type": "linear"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "dashed"
             }
           },
           "mappings": [],
@@ -125,7 +125,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT executor_id,\r\n       acceptance_time\r\nFROM ExecutorStatistics;\r\n\r\n",
+          "rawSql": "SELECT executor_id,\r\n       acceptance_time\r\nFROM ExecutorStatistics\r\norder by executor_id;\r\n\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -200,7 +200,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "be7tb302fy0w0a"
+        "uid": "be7tk8tet4pogb"
       },
       "fieldConfig": {
         "defaults": {
@@ -280,7 +280,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT executor_id,\r\n       accepted_orders_count\r\nFROM ExecutorStatistics;\r\n",
+          "rawSql": "SELECT executor_id,\r\n       accepted_orders_count\r\nFROM ExecutorStatistics\r\norder by executor_id;\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -312,13 +312,13 @@
     "list": []
   },
   "time": {
-    "from": "2024-12-23T01:40:31.000Z",
-    "to": "2024-12-23T23:40:31.000Z"
+    "from": "now-5m",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "DWH Executor",
   "uid": "ee7pl2wgd3cowd",
-  "version": 13,
+  "version": 4,
   "weekStart": ""
 }
