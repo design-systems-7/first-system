@@ -31,8 +31,9 @@ port: 5433
 
 7. Включить DAG `update_marts` -- http://127.0.0.1:8080/dags/update_marts/grid?tab=details. 
 Он запускается раз в минуту.
-8. Дашборды расположены в Графане по адресу `localhost:3000`
-9. Для начала работы с дашбордами нужно будет добавить data source
+8. Дашборды расположены в Графане по адресу `localhost:3000`. 
+9. Логин - `admin`, пароль - `admin`.
+10. Для начала работы с дашбордами нужно будет добавить data source
 
 ```
 host url: postgres-marts:5433
@@ -42,4 +43,4 @@ password: marts
 ssl mode: disabled
 ```
 
-10. Импортировать дашборды из `grafana/main_dashboard.json`
+11. Импортировать дашборды из `grafana/main_dashboard.json`
