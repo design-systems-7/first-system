@@ -95,7 +95,6 @@ def update_order_snapshots(**context):
     if snapshot_data:
         previous_snapshot_sql = """
                    SELECT 
-                       active_count,
                        cancelled_count,
                        done_count,
                        avg_order_price,
@@ -109,12 +108,12 @@ def update_order_snapshots(**context):
 
         if previous_snapshot_data:
             snapshot_data = (
-                previous_snapshot_data[0] + snapshot_data[0],
-                previous_snapshot_data[1] + snapshot_data[1],
-                previous_snapshot_data[2] + snapshot_data[2],
-                (previous_snapshot_data[3] + snapshot_data[3]) / 2,
-                previous_snapshot_data[4] + snapshot_data[4],
-                previous_snapshot_data[5] + snapshot_data[5]
+                snapshot_data[0],
+                previous_snapshot_data[1] + snapshot_data[0],
+                previous_snapshot_data[2] + snapshot_data[1],
+                (previous_snapshot_data[3] + snapshot_data[2]) / 2,
+                previous_snapshot_data[4] + snapshot_data[3],
+                previous_snapshot_data[5] + snapshot_data[4]
             )
 
         snapshot_insert_sql = """
