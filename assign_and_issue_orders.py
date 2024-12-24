@@ -80,7 +80,6 @@ def issue_order(executer_id, sleep_time):
             print(f"[ISSUE] Response: {response.status_code}, {response.text}")
         except Exception as e:
             print(f"[ISSUE] Error: {e}")
-            return
 
 
 # Создание потоков
