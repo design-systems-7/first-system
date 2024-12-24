@@ -18,8 +18,6 @@ def update_executor_statistics(**context):
     source_hook = PostgresHook(postgres_conn_id='raw_dwh_layer')
     target_hook = PostgresHook(postgres_conn_id='postgres_marts')
 
-    last_processed = context['ti'].xcom_pull(task_ids='get_last_processed_time_task')
-
     sql_query = f"""
         WITH OrderStats AS (
             SELECT 
@@ -33,7 +31,6 @@ def update_executor_statistics(**context):
                 ) as avg_acceptance_seconds,
                 COUNT(*) as accepted_orders_count
             FROM "order"
-            WHERE updated_at > '{last_processed}'
             GROUP BY executer_id
         )
         SELECT 
@@ -56,7 +53,7 @@ def update_executor_statistics(**context):
                 ON CONFLICT (executor_id) 
                 DO UPDATE SET
                     acceptance_time = EXCLUDED.acceptance_time,
-                    accepted_orders_count = ExecutorStatistics.accepted_orders_count + EXCLUDED.accepted_orders_count;
+                    accepted_orders_count = EXCLUDED.accepted_orders_count;
             """
             target_hook.run(insert_sql, parameters=executor_stat)
 
@@ -78,7 +75,6 @@ def update_order_snapshots(**context):
                 SUM(coin_bonus_amount) as bonus_sum,
                 SUM(coin_coeff) as total_coins
             FROM "order"
-            WHERE updated_at > '{last_processed}'
         )
         SELECT 
             active_count,

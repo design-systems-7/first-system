@@ -2,13 +2,10 @@ import datetime as dt
 import enum
 import uuid
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
+from sqlalchemy import Column, String, Float, DateTime, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import as_declarative, declared_attr
-from datetime import datetime
 
 from app.models.base_class import Base
-from sqlalchemy.sql import func
 
 class OrderStatus(enum.Enum):
     active = "active"
@@ -28,5 +25,3 @@ class Order(Base):
     route_information = Column(String, nullable=False)
     assign_time = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
     acquire_time = Column(DateTime, nullable=True)
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
