@@ -32,7 +32,7 @@ def assign_order(executer_id, sleep_time):
             print(f"[ASSIGN] Error: {e}")
             return
 
-        if random.randint(1, 10) >= 3:
+        if random.randint(1, 10) >= 10:
             # URL для отмены заказа
             url = f"http://127.0.0.1:8000/api/v1/cancel_order?assigned_order_id={assigned_order_id}"
             headers = {"accept": "application/json"}
@@ -54,14 +54,15 @@ def issue_order(executer_id, sleep_time):
     url = f"http://127.0.0.1:8001/api/v1/issue_order/issue_order?executer_id={executer_id}"
     headers = {"accept": "application/json"}
 
-    while True:
+    no_order_assigned = True
+    while no_order_assigned:
         try:
             # Отправка POST-запроса
             response = requests.post(url, headers=headers, data={})
             new_order_id = response.json()['assign_order_id']
-            print(f"[ISSUE] Response: {response.status_code}, {response.text}")
+            print(f"[ISSUE Startup] Response: {response.status_code}, {response.text}")
             # ждем первого заказа
-            break
+            no_order_assigned = False
         except Exception as e:
             print(f"[ISSUE Startup] Error: {e}")
 
@@ -75,8 +76,7 @@ def issue_order(executer_id, sleep_time):
         try:
             # Отправка POST-запроса
             response = requests.post(url, headers=headers, data={})
-            if 'assign_order_id' in response:
-                new_order_id = response.json()['assign_order_id']
+            new_order_id = response.json()['assign_order_id']
             print(f"[ISSUE] Response: {response.status_code}, {response.text}")
         except Exception as e:
             print(f"[ISSUE] Error: {e}")
