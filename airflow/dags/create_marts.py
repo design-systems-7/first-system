@@ -55,7 +55,7 @@ def update_executor_statistics(**context):
                 VALUES (%s, %s, %s)
                 ON CONFLICT (executor_id) 
                 DO UPDATE SET
-                    acceptance_time = EXCLUDED.acceptance_time,
+                    acceptance_time = (ExecutorStatistics.acceptance_time + EXCLUDED.acceptance_time) / 2,
                     accepted_orders_count = ExecutorStatistics.accepted_orders_count + EXCLUDED.accepted_orders_count;
             """
             target_hook.run(insert_sql, parameters=executor_stat)
@@ -93,6 +93,30 @@ def update_order_snapshots(**context):
     snapshot_data = source_hook.get_first(snapshot_sql)
 
     if snapshot_data:
+        previous_snapshot_sql = """
+                   SELECT 
+                       active_count,
+                       cancelled_count,
+                       done_count,
+                       avg_order_price,
+                       bonus_sum,
+                       total_coins
+                   FROM OrderStatisticsSnapshots
+                   ORDER BY snapshot_datetime DESC
+                   LIMIT 1
+               """
+        previous_snapshot_data = target_hook.get_first(previous_snapshot_sql)
+
+        if previous_snapshot_data:
+            snapshot_data = (
+                previous_snapshot_data[0] + snapshot_data[0],
+                previous_snapshot_data[1] + snapshot_data[1],
+                previous_snapshot_data[2] + snapshot_data[2],
+                (previous_snapshot_data[3] + snapshot_data[3]) / 2,
+                previous_snapshot_data[4] + snapshot_data[4],
+                previous_snapshot_data[5] + snapshot_data[5]
+            )
+
         snapshot_insert_sql = """
             INSERT INTO OrderStatisticsSnapshots (
                 snapshot_datetime,
